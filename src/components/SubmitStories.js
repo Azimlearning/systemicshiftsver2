@@ -295,6 +295,7 @@ export default function SubmitStories() {
             </div>
           </fieldset>
           
+          {/* --- Acknowledgement Fieldset (Ensure text wraps) --- */}
           <fieldset className="bg-gray-50 p-8 rounded-lg shadow-md">
             <legend className="text-3xl font-bold text-teal-700 mb-6">Acknowledgement and Consent</legend>
             <div className="space-y-6">
@@ -305,14 +306,16 @@ export default function SubmitStories() {
                   checked={formData.acknowledgement}
                   onChange={handleChange}
                   required
-                  className="h-5 w-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 mt-1"
+                  className="h-5 w-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 mt-1 flex-shrink-0" // Added flex-shrink-0
                 />
-                <span className="text-gray-700">
-                  I hereby acknowledge and provide my full consent...
+                {/* Ensure this span allows wrapping */}
+                <span className="text-gray-700 text-sm md:text-base"> {/* Adjusted text size slightly */}
+                  I hereby acknowledge and provide my full consent for the publishing team to review, edit, and enhance the design, layout, and overall presentation of the content I have submitted. I understand that any modifications will be made solely for the purpose of improving readability, visual appeal, and alignment with the organization's publishing standards, without altering the core message or intent of the material. By providing this consent, I affirm that I accept and approve any reasonable design and enhancement adjustments deemed necessary for publication.
                 </span>
               </label>
             </div>
           </fieldset>
+          {/* --- END UPDATE --- */}
 
           <div>
             <button
