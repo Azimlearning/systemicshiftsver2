@@ -47,18 +47,26 @@ export default function HeroSection() {
           </div>
         </div>
 
+        {/* Call to Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-center gap-6 animate-fade-in-up delay-600">
+          {/* --- NEW BUTTON --- */}
+          <Link
+            href="/login" // Link to the login page first
+            className="bg-white bg-opacity-80 hover:bg-opacity-100 text-teal-800 font-bold py-3 px-8 rounded-full transition-colors shadow-lg text-lg border border-white border-opacity-30"
+          >
+            Documents
+          </Link>
+          {/* --- END NEW BUTTON --- */}
+
           <Link href="#submit-stories" className="bg-cyan-500 hover:bg-cyan-600 text-teal-900 font-bold py-3 px-8 rounded-full transition-colors shadow-lg text-lg">
             Submit Your Story
           </Link>
-          {/* --- UPDATED Second Button --- */}
           <Link
             href="#key-shifts"
-            className="bg-white bg-opacity-80 hover:bg-opacity-100 text-teal-800 font-bold py-3 px-8 rounded-full transition-colors shadow-lg text-lg border border-white border-opacity-30" // Changed background opacity and text color
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg text-lg border border-white border-opacity-30"
           >
             Explore Key Shifts
           </Link>
-          {/* --- END UPDATE --- */}
         </div>
       </div>
     </section>
