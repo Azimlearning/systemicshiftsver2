@@ -49,3 +49,28 @@ body {
   height: auto;
   object-fit: cover;
 }
+
+/* --- Add this new code for the popup animation --- */
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  15% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  85% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+.popup-animation {
+  animation: fadeInOut 3s ease-in-out forwards;
+}
