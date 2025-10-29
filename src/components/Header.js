@@ -1,8 +1,8 @@
 // src/components/Header.js
-'use client'; // This component will need to be a client component
+'use client'; // Still needed for scroll tracking
 
 import Link from 'next/link';
-import Image from 'next/image';
+// REMOVED Image import as we are not using images anymore
 import { useState, useEffect } from 'react';
 
 export default function Header() {
@@ -19,21 +19,16 @@ export default function Header() {
     { name: 'Submit Stories', href: '#submit-stories' },
   ];
 
-  // This is the background image for the buttons
-  // You must crop ONE of the blue buttons and save it to /public/nav-button-bg.png
-  const navBgImage = '/nav-button-bg.png'; // TODO: Upload this image!
-
-  // This useEffect will listen to the scroll position
-  // and update the "glowing" button.
+  // Scroll tracking effect (unchanged)
   useEffect(() => {
     const handleScroll = () => {
       let currentSection = 'home';
-      // Loop through sections to find which one is in view
       navItems.forEach((item) => {
         const section = document.getElementById(item.href.substring(1));
         if (section) {
           const rect = section.getBoundingClientRect();
-          if (rect.top <= 100 && rect.bottom >= 100) {
+          // Adjust top offset if header height changes (e.g., 80px)
+          if (rect.top <= 80 && rect.bottom >= 80) {
             currentSection = item.name;
           }
         }
@@ -42,12 +37,15 @@ export default function Header() {
     };
 
     window.addEventListener('scroll', handleScroll);
+    // Initial check on load
+    handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [navItems]);
+  }, [navItems]); // Added navItems dependency
 
   return (
-    <header className="w-full sticky top-0 z-50">
-      <nav className="flex justify-center">
+    // Sticky header with background gradient and shadow
+    <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-teal-700 via-cyan-700 to-teal-800 shadow-lg">
+      <nav className="container mx-auto flex justify-center items-center h-16 md:h-20">
         {navItems.map((item) => {
           const isActive = item.name === activeSection;
 
@@ -55,31 +53,27 @@ export default function Header() {
             <Link
               key={item.name}
               href={item.href}
-              className="relative flex-1 max-w-[150px] aspect-[4/3] flex items-center justify-center text-center text-white font-bold text-lg hover:opacity-90 transition-all"
+              className={`
+                flex items-center justify-center h-full px-3 md:px-5 lg:px-6
+                text-center text-sm md:text-base font-semibold transition-all duration-200 ease-in-out
+                relative group whitespace-nowrap // Prevent wrapping
+                ${isActive
+                  ? 'text-white scale-105' // Active text style
+                  : 'text-cyan-200 hover:text-white' // Inactive text style
+                }
+              `}
             >
-              {/* Background Image */}
-              <Image
-                src={navBgImage}
-                alt=""
-                layout="fill"
-                objectFit="cover"
-                className="z-0"
+              {/* Link Text */}
+              {item.name}
+
+              {/* Active Indicator (Underline) */}
+              <span
+                className={`
+                  absolute bottom-0 left-0 w-full h-1 bg-cyan-300 rounded-t-full
+                  transition-all duration-300 ease-out transform scale-x-0 group-hover:scale-x-100
+                  ${isActive ? 'scale-x-100' : 'scale-x-0'}
+                `}
               />
-              {/* Text Content */}
-              <span className="relative z-10 p-2 leading-tight">
-                {item.name}
-              </span>
-              {/* "Glow" effect for active item */}
-              {isActive && (
-                <span
-                  className="absolute inset-0 z-20"
-                  style={{
-                    boxShadow: '0 0 15px 5px rgba(110, 231, 255, 0.7)',
-                    backgroundImage:
-                      'radial-gradient(circle, rgba(110, 231, 255, 0.3) 10%, transparent 70%)',
-                  }}
-                />
-              )}
             </Link>
           );
         })}

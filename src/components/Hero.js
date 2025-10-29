@@ -1,7 +1,10 @@
 // components/Hero.js
 export default function Hero() {
   return (
-    <section className="bg-gradient-to-br from-teal-700 to-emerald-800 text-white py-16 md:py-24 lg:py-32 shadow-inner">
+    <section 
+      id="upstream-target" // <-- ID for nav link
+      className="bg-gradient-to-br from-teal-700 to-emerald-800 text-white py-16 md:py-24 lg:py-32 shadow-inner scroll-mt-20"
+    >
       <div className="container mx-auto px-4 text-center">
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-4 uppercase">
           PETRONAS 2.0
