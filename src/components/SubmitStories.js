@@ -99,12 +99,12 @@ export default function SubmitStories() {
       } else if (name === 'visuals') {
         setVisualFiles(Array.from(files));
       }
-    } else if (type === 'checkbox' && e.target.dataset.group) { // <-- BUG FIX HERE
+    } else if (type === 'checkbox' && e.target.dataset.group) {
       const groupName = e.target.dataset.group;
       setFormData((prev) => ({
         ...prev,
         [groupName]: checked
-          ? [...(prev[groupName] || []), value] // Ensure iterable
+          ? [...(prev[groupName] || []), value]
           : (prev[groupName] || []).filter((item) => item !== value),
       }));
     } else {
@@ -120,17 +120,17 @@ export default function SubmitStories() {
     setIsSubmitting(true);
     setSubmitError(null);
 
+    // Corrected Function URL for the new us-central1 deployment
     const functionUrl = "https://submitstory-el2jwxb5bq-uc.a.run.app";
 
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        value.forEach(item => data.append(`${key}[]`, item));
+        value.forEach(item => data.append(`${key}[]`, item)); 
       } else if (value !== null) {
         data.append(key, value);
       }
     });
-
     if (writeUpFile) {
       data.append('writeUp', writeUpFile, writeUpFile.name);
     }
@@ -139,26 +139,38 @@ export default function SubmitStories() {
     });
 
     try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        body: data,
-      });
+        const response = await fetch(functionUrl, {
+            method: 'POST',
+            body: data,
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+            let errorText;
+            try {
+                const errorData = await response.json();
+                errorText = errorData.error || `HTTP error! status: ${response.status}`;
+            } catch (jsonError) {
+                errorText = await response.text(); 
+                if (errorText.length > 200) {
+                    errorText = `Server returned a non-JSON error (status ${response.status}). Check function logs for details.`
+                }
+            }
+            throw new Error(errorText);
+        }
 
-      setFormData(initialFormState);
-      setWriteUpFile(null);
-      setVisualFiles([]);
-      e.target.reset();
-      setShowSuccessPopup(true);
-      setTimeout(() => setShowSuccessPopup(false), 3000);
+        setFormData(initialFormState);
+        setWriteUpFile(null);
+        setVisualFiles([]);
+        e.target.reset();
+
+        setShowSuccessPopup(true);
+        setTimeout(() => {
+            setShowSuccessPopup(false);
+        }, 3000);
 
     } catch (error) {
-      console.error("Error submitting form via function: ", error);
-      setSubmitError(`Submission failed: ${error.message}`);
+        console.error("Error submitting form via function: ", error);
+        setSubmitError(`Submission failed: ${error.message}`);
     }
 
     setIsSubmitting(false);
@@ -295,7 +307,6 @@ export default function SubmitStories() {
             </div>
           </fieldset>
           
-          {/* --- Acknowledgement Fieldset (Ensure text wraps) --- */}
           <fieldset className="bg-gray-50 p-8 rounded-lg shadow-md">
             <legend className="text-3xl font-bold text-teal-700 mb-6">Acknowledgement and Consent</legend>
             <div className="space-y-6">
@@ -306,16 +317,14 @@ export default function SubmitStories() {
                   checked={formData.acknowledgement}
                   onChange={handleChange}
                   required
-                  className="h-5 w-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 mt-1 flex-shrink-0" // Added flex-shrink-0
+                  className="h-5 w-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 mt-1 flex-shrink-0"
                 />
-                {/* Ensure this span allows wrapping */}
-                <span className="text-gray-700 text-sm md:text-base"> {/* Adjusted text size slightly */}
+                <span className="text-gray-700 text-sm md:text-base">
                   I hereby acknowledge and provide my full consent for the publishing team to review, edit, and enhance the design, layout, and overall presentation of the content I have submitted. I understand that any modifications will be made solely for the purpose of improving readability, visual appeal, and alignment with the organization's publishing standards, without altering the core message or intent of the material. By providing this consent, I affirm that I accept and approve any reasonable design and enhancement adjustments deemed necessary for publication.
                 </span>
               </label>
             </div>
           </fieldset>
-          {/* --- END UPDATE --- */}
 
           <div>
             <button

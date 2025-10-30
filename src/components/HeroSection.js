@@ -54,7 +54,7 @@ export default function HeroSection() {
             href="/login" // Link to the login page first
             className="bg-white bg-opacity-80 hover:bg-opacity-100 text-teal-800 font-bold py-3 px-8 rounded-full transition-colors shadow-lg text-lg border border-white border-opacity-30"
           >
-            Documents
+            NexusHub
           </Link>
           {/* --- END NEW BUTTON --- */}
 
