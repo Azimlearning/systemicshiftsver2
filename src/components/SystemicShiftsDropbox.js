@@ -1,4 +1,3 @@
-// src/components/SystemicShiftsDropbox.js
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -71,8 +70,8 @@ export default function SystemicShiftsDropbox() {
   // Auth check and data fetch
   useEffect(() => {
     if (sessionStorage.getItem('isLoggedIn') !== 'true') {
-      // Redirect to login with the correct return path
-      router.push('/login?redirect=/nexushub?tab=dropbox');
+      // CORRECTED REDIRECT
+      router.push('/login?redirect=/nexushub/dropbox');
     } else {
       setIsLoggedIn(true);
       fetchSubmissions('first');

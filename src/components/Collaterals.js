@@ -1,4 +1,3 @@
-// src/components/Collaterals.js
 import Image from 'next/image';
 import Link from 'next/link'; // For clickable elements
 
