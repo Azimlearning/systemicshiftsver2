@@ -1,29 +1,44 @@
 // src/app/page.js
-import Header from '@/components/Header';
-import HeroSection from '@/components/HeroSection';
-import Hero from '@/components/Hero';
-import UpstreamTarget from '@/components/UpstreamTarget';
-import KeyShifts from '@/components/KeyShifts';
-import MindsetBehaviour from '@/components/MindsetBehaviour';
-import OurProgress from '@/components/OurProgress';
-import Faq from '@/components/Faq';
-import SubmitStories from '@/components/SubmitStories';
+
+import Header from '../components/Header';
+import Hero from '../components/Hero';
+import HeroSection from '../components/HeroSection'; // Or whatever your Petronas 2.0 component is
+import UpstreamTarget from '../components/UpstreamTarget';
+import KeyShifts from '../components/KeyShifts';
+import MindsetBehaviour from '../components/MindsetBehaviour';
+import OurProgress from '../components/OurProgress';
+// REMOVED Faq and SubmitStories imports
+import Footer from '../components/Footer'; // <-- NEW
 
 export default function Home() {
   return (
-    <div>
+    <div className="min-h-screen bg-gray-100 font-sans flex flex-col">
       <Header />
-      <main>
-        <HeroSection />
-        <Hero />
-        <UpstreamTarget />
-        <KeyShifts />
-        <MindsetBehaviour />
-        <OurProgress />
-        <Faq />
-        <SubmitStories />
+      <main className="flex-grow">
+        <section id="home">
+          <Hero />
+        </section>
+        <section id="upstream-target"> {/* Changed this ID to match the link */}
+           <HeroSection />
+        </section>
+        {/* We keep this section wrapper in case UpstreamTarget needs it */}
+        <section> 
+          <UpstreamTarget />
+        </section>
+        <section id="key-shifts">
+          <KeyShifts />
+        </section>
+        <section id="mindset-behaviour">
+          <MindsetBehaviour />
+        </section>
+        <section id="our-progress">
+          <OurProgress />
+        </section>
+
+        {/* --- REMOVED FAQ and SubmitStories SECTIONS --- */}
+
       </main>
-      {/* Footer component removed as it does not exist */}
+      <Footer /> {/* <-- NEW */}
     </div>
   );
 }

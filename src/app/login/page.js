@@ -2,19 +2,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image'; // <-- NEW
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const searchParams = useSearchParams(); // Get query params
-  // Get redirect URL or default to the Dropbox tab
+  const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/nexushub?tab=dropbox';
 
-  // Redirect if already logged in
   useEffect(() => {
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
       router.push(redirectUrl);
@@ -30,7 +29,7 @@ export default function LoginPage() {
 
     if (username === correctUsername && password === correctPassword) {
       sessionStorage.setItem('isLoggedIn', 'true');
-      router.push(redirectUrl); // Use the dynamic redirectUrl
+      router.push(redirectUrl);
     } else {
       setError('Invalid username or password.');
     }
@@ -39,6 +38,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-800 to-teal-900 px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-8 md:p-12">
+        
+        {/* --- LOGO --- */}
+        <div className="flex justify-center mb-8">
+            <Image
+                src="/Systemic-Shifts-Logo/systemic-shifts-logo-Solid.png"
+                alt="Systemic Shifts Logo"
+                width={240} // A bit larger for emphasis
+                height={48} // Maintain aspect ratio
+                priority
+            />
+        </div>
+        {/* --- END LOGO --- */}
+
         <h1 className="text-3xl md:text-4xl font-bold text-center text-teal-700 mb-8">
           Admin Login
         </h1>

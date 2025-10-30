@@ -37,7 +37,6 @@ exports.submitStory = onRequest(
     secrets: [geminiApiKey, openRouterApiKey],
     timeoutSeconds: 300, 
     memory: '1GiB',
-    // environmentVariables: { DEPLOY_VERSION: "v3" } // This line was causing issues, removing it
   },
   (req, res) => {
   cors(req, res, async () => {
@@ -146,7 +145,6 @@ exports.analyzeStorySubmission = onDocumentCreated(
         secrets: [geminiApiKey, openRouterApiKey],
         timeoutSeconds: 540, 
         memory: '1GiB',
-        // environmentVariables: { DEPLOY_VERSION: "v3" }
     },
     async (event) => {
     const snap = event.data;
@@ -196,7 +194,7 @@ You are an internal communications writer for PETRONAS Upstream. Your task is to
     * Start with a hook or impactful statement.
     * Clearly state the challenge or the 'Case for Change'.
     * Describe the solution, action taken, or 'Desired End State' achieved.
-    * Highlight key results and quantifiable impacts (e.Read more: g., cost savings, efficiency gains, safety records) – make these stand out.
+    * Highlight key results and quantifiable impacts (e.g., cost savings, efficiency gains, safety records) – make these stand out.
     * Connect the story to relevant Systemic Shifts (Portfolio High-Grading, Deliver Advantaged Barrels, Operate it Right) or desired mindsets (Risk Tolerant, Commercial Savvy, Growth Mindset) if applicable.
     * Conclude with the significance, learnings, or future implications.
 * **Input Data:**
@@ -254,58 +252,81 @@ ${fullContextText}
 });
 
 // -----------------------------------------------------------------
-// --- NEW: Chatbot Function ---
+// --- UPDATED: Chatbot Function (V2 Syntax) ---
 // -----------------------------------------------------------------
 exports.askChatbot = onRequest(
-  {
+  { 
     region: 'us-central1',
     secrets: [geminiApiKey, openRouterApiKey],
-    timeoutSeconds: 120
+    timeoutSeconds: 120,
   },
   (req, res) => {
-    // Use CORS middleware
-    cors(req, res, async () => {
-      if (req.method !== "POST") {
-        return res.status(405).send({ error: "Method Not Allowed" });
+  cors(req, res, async () => {
+    if (req.method !== "POST") {
+      return res.status(405).send({ error: "Method Not Allowed" });
+    }
+
+    try {
+      const { message } = req.body;
+
+      if (!message) {
+        return res.status(400).send({ error: "Message is required." });
       }
 
-      try {
-        const { message } = req.body;
+      console.log(`Chatbot received message: ${message}`);
 
-        if (!message) {
-          return res.status(400).send({ error: "Message is required." });
-        }
+      const keys = {
+        gemini: geminiApiKey.value(),
+        openrouter: openRouterApiKey.value()
+      };
 
-        console.log(`Chatbot received message: ${message}`);
+      // --- UPDATED Prompt: Ask for Suggestions ---
+      const systemPrompt = `You are a helpful AI assistant for the PETRONAS Upstream "Systemic Shifts" microsite named "Nexus Assistant".
+      Answer questions concisely based on the context below and your general knowledge.
+      Context: Goal is PETRONAS 2.0 by 2035; Key Shifts are "Portfolio High-Grading" & "Deliver Advantaged Barrels"; Mindsets are "More Risk Tolerant", "Commercial Savvy", "Growth Mindset".
 
-        const keys = {
-          gemini: geminiApiKey.value(),
-          openrouter: openRouterApiKey.value()
-        };
+      After providing your answer, suggest 2-3 brief, relevant follow-up questions the user might ask next.
+      Format your entire response like this:
+      MAIN_ANSWER_TEXT_HERE
+      ---
+      Suggestions:
+      - Follow-up question 1?
+      - Follow-up question 2?
+      - Follow-up question 3?
+      `;
 
-        const systemPrompt = `You are a helpful AI assistant for the PETRONAS Upstream "Systemic Shifts" microsite.
-        Your name is "Nexus Assistant".
-        You can answer questions about PETRONAS, Systemic Shifts, Upstream Targets, Key Shifts, and Mindsets.
-        Be concise, helpful, and professional.
-        
-        Here is some context (which you can add to later):
-        - The goal is PETRONAS 2.0 by 2035.
-        - Key Shifts include "Portfolio High-Grading" and "Deliver Advantaged Barrels".
-        - Desired Mindsets are "More Risk Tolerant", "Commercial Savvy", and "Growth Mindset".
+      const fullPrompt = `${systemPrompt}\n\nUSER QUESTION: ${message}\n\nASSISTANT RESPONSE:`;
+      // --- END UPDATED Prompt ---
 
-        The user is asking a question. Answer it based on this context and your general knowledge.
-        `;
-        
-        const fullPrompt = `${systemPrompt}\n\nUSER QUESTION: ${message}\n\nASSISTANT ANSWER:`;
+      // --- Call AI (unchanged) ---
+      const aiResponseRaw = await generateWithFallback(fullPrompt, keys, false);
 
-        const aiResponse = await generateWithFallback(fullPrompt, keys, false);
+      // --- NEW: Parse Response and Suggestions ---
+      let mainReply = aiResponseRaw;
+      let suggestions = [];
 
-        res.status(200).send({ reply: aiResponse });
+      const suggestionMarker = "\n---\nSuggestions:";
+      const suggestionIndex = aiResponseRaw.indexOf(suggestionMarker);
 
-      } catch (error) {
-        console.error("Error in askChatbot function:", error);
-        res.status(500).send({ error: "Sorry, I couldn't process that request." });
+      if (suggestionIndex !== -1) {
+        mainReply = aiResponseRaw.substring(0, suggestionIndex).trim();
+        const suggestionLines = aiResponseRaw.substring(suggestionIndex + suggestionMarker.length)
+                                          .split('\n')
+                                          .map(line => line.trim())
+                                          .filter(line => line.startsWith('-')); // Only keep lines starting with '-'
+
+        suggestions = suggestionLines.map(line => line.substring(1).trim().replace(/\?$/, '')); // Remove '-' and trailing '?'
       }
-    });
-  }
-);
+      // --- END NEW Parsing Logic ---
+
+
+      // Send the parsed reply and suggestions back
+      res.status(200).send({ reply: mainReply, suggestions: suggestions });
+
+    } catch (error) {
+      console.error("Error in askChatbot function:", error);
+      res.status(500).send({ error: "Sorry, I couldn't process that request." });
+    }
+  });
+});
+// --- END UPDATED Chatbot Function ---

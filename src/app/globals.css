@@ -74,3 +74,11 @@ body {
 .popup-animation {
   animation: fadeInOut 3s ease-in-out forwards;
 }
+
+/* Add these helper classes */
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
