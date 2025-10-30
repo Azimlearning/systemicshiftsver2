@@ -3,6 +3,7 @@
 
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 const Busboy = require("busboy");
@@ -36,7 +37,7 @@ exports.submitStory = onRequest(
     secrets: [geminiApiKey, openRouterApiKey],
     timeoutSeconds: 300, 
     memory: '1GiB',
-    environmentVariables: { DEPLOY_VERSION: "v3" }
+    // environmentVariables: { DEPLOY_VERSION: "v3" } // This line was causing issues, removing it
   },
   (req, res) => {
   cors(req, res, async () => {
@@ -145,7 +146,7 @@ exports.analyzeStorySubmission = onDocumentCreated(
         secrets: [geminiApiKey, openRouterApiKey],
         timeoutSeconds: 540, 
         memory: '1GiB',
-        environmentVariables: { DEPLOY_VERSION: "v3" }
+        // environmentVariables: { DEPLOY_VERSION: "v3" }
     },
     async (event) => {
     const snap = event.data;
@@ -251,3 +252,60 @@ ${fullContextText}
         console.error(`Error updating Firestore document ${storyId}:`, error);
     }
 });
+
+// -----------------------------------------------------------------
+// --- NEW: Chatbot Function ---
+// -----------------------------------------------------------------
+exports.askChatbot = onRequest(
+  {
+    region: 'us-central1',
+    secrets: [geminiApiKey, openRouterApiKey],
+    timeoutSeconds: 120
+  },
+  (req, res) => {
+    // Use CORS middleware
+    cors(req, res, async () => {
+      if (req.method !== "POST") {
+        return res.status(405).send({ error: "Method Not Allowed" });
+      }
+
+      try {
+        const { message } = req.body;
+
+        if (!message) {
+          return res.status(400).send({ error: "Message is required." });
+        }
+
+        console.log(`Chatbot received message: ${message}`);
+
+        const keys = {
+          gemini: geminiApiKey.value(),
+          openrouter: openRouterApiKey.value()
+        };
+
+        const systemPrompt = `You are a helpful AI assistant for the PETRONAS Upstream "Systemic Shifts" microsite.
+        Your name is "Nexus Assistant".
+        You can answer questions about PETRONAS, Systemic Shifts, Upstream Targets, Key Shifts, and Mindsets.
+        Be concise, helpful, and professional.
+        
+        Here is some context (which you can add to later):
+        - The goal is PETRONAS 2.0 by 2035.
+        - Key Shifts include "Portfolio High-Grading" and "Deliver Advantaged Barrels".
+        - Desired Mindsets are "More Risk Tolerant", "Commercial Savvy", and "Growth Mindset".
+
+        The user is asking a question. Answer it based on this context and your general knowledge.
+        `;
+        
+        const fullPrompt = `${systemPrompt}\n\nUSER QUESTION: ${message}\n\nASSISTANT ANSWER:`;
+
+        const aiResponse = await generateWithFallback(fullPrompt, keys, false);
+
+        res.status(200).send({ reply: aiResponse });
+
+      } catch (error) {
+        console.error("Error in askChatbot function:", error);
+        res.status(500).send({ error: "Sorry, I couldn't process that request." });
+      }
+    });
+  }
+);

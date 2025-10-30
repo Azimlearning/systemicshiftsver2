@@ -3,7 +3,6 @@
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getStorage } = require("firebase-admin/storage");
-const fetch = require('node-fetch'); // For OpenRouter calls
 const pdf = require('pdf-parse'); // For PDF extraction
 const mammoth = require('mammoth'); // For .docx extraction
 const { createWorker } = require('tesseract.js'); // For Image OCR
@@ -38,6 +37,7 @@ const AI_MODEL_CHAIN = [
  * Tries to generate content by iterating through a chain of AI models.
  */
 async function generateWithFallback(prompt, keys, outputJson = false) {
+  const fetch = (await import('node-fetch')).default;
   let lastError = null;
 
   for (const config of AI_MODEL_CHAIN) {

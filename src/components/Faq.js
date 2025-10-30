@@ -1,10 +1,10 @@
 // src/components/Faq.js
-'use client'; // We need this for the interactive accordion and chat input
+'use client'; 
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { FaPlus, FaMinus } from 'react-icons/fa';
 
-// --- Part 1: Accordion Component ---
-// We'll define a reusable component here for the accordion items
+// --- Accordion Component --- 
 function AccordionItem({ title, children }) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -16,7 +16,7 @@ function AccordionItem({ title, children }) {
       >
         <span className="text-xl font-semibold text-gray-800">{title}</span>
         <span className="text-2xl text-teal-600">
-          {isOpen ? '-' : '+'}
+          {isOpen ? <FaMinus /> : <FaPlus />}
         </span>
       </button>
       {isOpen && (
@@ -28,10 +28,63 @@ function AccordionItem({ title, children }) {
   );
 }
 
-// --- Main FAQ Component ---
+// --- Main FAQ Component --- 
 export default function Faq() {
-  // Placeholder state for the chat input
+  const [isClient, setIsClient] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [chatError, setChatError] = useState('');
+  const [chatHistory, setChatHistory] = useState([
+    {
+      role: 'ai',
+      content: "Hi there! I'm the Nexus Assistant. How can I help you today?"
+    }
+  ]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const handleChatSubmit = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || isChatLoading) return;
+
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    setChatError('');
+    setIsChatLoading(true);
+
+    setChatHistory(prev => [...prev, { role: 'user', content: userMessage }]);
+
+    const chatFunctionUrl = "https://askchatbot-el2jwxb5bq-uc.a.run.app"; 
+
+    try {
+      const response = await fetch(chatFunctionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage })
+      });
+
+      if (!response.ok) {
+        throw new Error("The assistant isn't available right now. Please try again later.");
+      }
+
+      const data = await response.json();
+      
+      setChatHistory(prev => [...prev, { role: 'ai', content: data.reply }]);
+
+    } catch (error) {
+      console.error("Chatbot fetch error:", error);
+      setChatError(error.message);
+      setChatHistory(prev => [...prev, { role: 'ai', content: "Sorry, I'm having trouble connecting. Please try again." }]);
+    }
+
+    setIsChatLoading(false);
+  };
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <section id="faq" className="bg-gray-100 py-16 md:py-24">
@@ -40,73 +93,80 @@ export default function Faq() {
           Frequently Asked Questions
         </h2>
 
-        {/* --- Part 1: Top 3 Questions --- */}
         <div className="bg-white p-8 rounded-lg shadow-xl mb-16">
           <h3 className="text-2xl font-bold text-gray-800 mb-6">Top Questions</h3>
           
-          <AccordionItem title="Question 1: Lorem ipsum dolor sit amet?">
+          <AccordionItem title="Question 1: What are the Systemic Shifts?">
             <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+              The Systemic Shifts are a series of strategic initiatives by PETRONAS Upstream to achieve their 2035 goals. They focus on portfolio high-grading, delivering advantaged barrels, and operating with excellence.
             </p>
           </AccordionItem>
           
-          <AccordionItem title="Question 2: Consectetur adipiscing elit?">
+          <AccordionItem title="Question 2: What are the desired mindsets?">
             <p>
-              Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+              The desired mindsets are a cultural shift towards being more risk-tolerant, commercially savvy, and fostering a growth mindset across the organization.
             </p>
           </AccordionItem>
           
-          <AccordionItem title="Question 3: Sed do eiusmod tempor incididunt ut labore?">
+          <AccordionItem title="Question 3: What is PETRONAS 2.0?">
             <p>
-              Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+              PETRONAS 2.0 is the vision for the company's future by 2035, emphasizing innovation, sustainability, and a forward-thinking approach to the energy industry.
             </p>
           </AccordionItem>
         </div>
 
-        {/* --- Part 2: Chatbot UI Skeleton --- */}
         <div className="bg-white p-8 rounded-lg shadow-xl">
           <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
             Still have questions? Ask our AI assistant.
           </h3>
           
           <div className="max-w-2xl mx-auto border border-gray-300 rounded-lg overflow-hidden">
-            {/* Chat History Window */}
             <div className="h-80 p-6 overflow-y-auto bg-gray-50 flex flex-col gap-4">
-              {/* Example AI Message */}
-              <div className="flex justify-start">
-                <div className="bg-teal-600 text-white p-4 rounded-lg max-w-xs shadow-md">
-                  <p>Hi there! I'm the Systemic Shifts AI. How can I help you today?</p>
-                </div>
-              </div>
               
-              {/* Example User Message (for styling) */}
-              <div className="flex justify-end">
-                <div className="bg-gray-200 text-gray-800 p-4 rounded-lg max-w-xs shadow-md">
-                  <p>What is the target for NPV?</p>
+              {chatHistory.map((msg, index) => (
+                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`p-4 rounded-lg max-w-xs shadow-md ${
+                    msg.role === 'user' 
+                      ? 'bg-gray-200 text-gray-800' 
+                      : 'bg-teal-600 text-white'
+                  }`}>
+                    <p>{msg.content}</p>
+                  </div>
                 </div>
-              </div>
+              ))}
+              
+              {isChatLoading && (
+                 <div className="flex justify-start">
+                  <div className="bg-teal-600 text-white p-4 rounded-lg max-w-xs shadow-md">
+                    <p className="animate-pulse">...</p>
+                  </div>
+                </div>
+              )}
+
             </div>
             
-            {/* Input Form (Skeleton) */}
             <form 
-              onSubmit={(e) => e.preventDefault()} // Prevents page reload
+              onSubmit={handleChatSubmit}
               className="flex border-t border-gray-300"
             >
               <input
                 type="text"
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type your question here..."
-                className="flex-grow p-4 border-none outline-none"
+                placeholder={isChatLoading ? "Waiting for response..." : "Type your question here..."}
+                disabled={isChatLoading}
+                className="flex-grow p-4 border-none outline-none disabled:bg-gray-100 text-gray-900"
               />
               <button
                 type="submit"
-                className="bg-teal-600 text-white px-6 py-4 font-semibold hover:bg-teal-700 transition-colors"
+                disabled={isChatLoading}
+                className="bg-teal-600 text-white px-6 py-4 font-semibold hover:bg-teal-700 transition-colors disabled:bg-gray-400"
               >
                 Send
               </button>
             </form>
           </div>
+          {chatError && <p className="text-red-500 text-sm text-center mt-2">{chatError}</p>}
         </div>
         
       </div>
