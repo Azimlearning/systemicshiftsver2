@@ -1,20 +1,25 @@
+// src/app/login/page.js
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link'; // <-- Import Link
+import { useRouter, useSearchParams } from 'next/navigation'; // Import useSearchParams
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams(); // Get query params
+  // Get redirect URL or default to the Dropbox tab
+  const redirectUrl = searchParams.get('redirect') || '/nexushub?tab=dropbox';
 
+  // Redirect if already logged in
   useEffect(() => {
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
-      router.push('/documents');
+      router.push(redirectUrl);
     }
-  }, [router]);
+  }, [router, redirectUrl]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -25,7 +30,7 @@ export default function LoginPage() {
 
     if (username === correctUsername && password === correctPassword) {
       sessionStorage.setItem('isLoggedIn', 'true');
-      router.push('/documents');
+      router.push(redirectUrl); // Use the dynamic redirectUrl
     } else {
       setError('Invalid username or password.');
     }
@@ -38,7 +43,7 @@ export default function LoginPage() {
           Admin Login
         </h1>
         <form onSubmit={handleLogin} className="space-y-6">
-          <div>
+           <div>
             <label
               htmlFor="username"
               className="block text-sm font-medium text-gray-700 mb-1"
@@ -84,15 +89,11 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
-
-        {/* --- NEW Back to Home Link --- */}
         <div className="mt-6 text-center">
           <Link href="/" className="text-sm text-gray-600 hover:text-teal-600 hover:underline">
             ← Back to Home Page
           </Link>
         </div>
-        {/* --- END NEW Link --- */}
-
       </div>
     </div>
   );

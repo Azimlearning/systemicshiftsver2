@@ -2,7 +2,6 @@
 'use client'; // Still needed for scroll tracking
 
 import Link from 'next/link';
-// REMOVED Image import as we are not using images anymore
 import { useState, useEffect } from 'react';
 
 export default function Header() {
@@ -14,40 +13,51 @@ export default function Header() {
     { name: 'Key Shifts', href: '#key-shifts' },
     { name: 'Mindset & Behaviour', href: '#mindset-behaviour' },
     { name: 'Our Progress', href: '#our-progress' },
-    { name: 'Collaterals', href: '#collaterals' },
+    // --- THIS LINE IS UPDATED ---
+    { name: 'NexusHub', href: '/nexushub' }, // Was 'Collaterals'
+    // --- END UPDATE ---
     { name: 'FAQ', href: '#faq' },
     { name: 'Submit Stories', href: '#submit-stories' },
   ];
 
-  // Scroll tracking effect (unchanged)
+  // Scroll tracking effect
   useEffect(() => {
     const handleScroll = () => {
-      let currentSection = 'home';
+      let currentSection = '';
       navItems.forEach((item) => {
-        const section = document.getElementById(item.href.substring(1));
-        if (section) {
-          const rect = section.getBoundingClientRect();
-          // Adjust top offset if header height changes (e.g., 80px)
-          if (rect.top <= 80 && rect.bottom >= 80) {
-            currentSection = item.name;
+        // Only track scroll position for hash links
+        if (item.href.startsWith('#')) {
+          const section = document.getElementById(item.href.substring(1));
+          if (section) {
+            const rect = section.getBoundingClientRect();
+            // Header height is approx 80px
+            if (rect.top <= 80 && rect.bottom >= 80) {
+              currentSection = item.name;
+            }
           }
         }
       });
+      // If no section is active (e.g., at the very top), default to Home
+      if (!currentSection) {
+          const homeSection = document.getElementById('home');
+          if (homeSection && homeSection.getBoundingClientRect().top <= 80) {
+              currentSection = 'Home';
+          }
+      }
       setActiveSection(currentSection);
     };
 
     window.addEventListener('scroll', handleScroll);
-    // Initial check on load
-    handleScroll();
+    handleScroll(); // Initial check
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [navItems]); // Added navItems dependency
+  }, []); // navItems is static, no need to include
 
   return (
-    // Sticky header with background gradient and shadow
     <header className="sticky top-0 z-50 w-full bg-gradient-to-r from-teal-700 via-cyan-700 to-teal-800 shadow-lg">
       <nav className="container mx-auto flex justify-center items-center h-16 md:h-20">
         {navItems.map((item) => {
-          const isActive = item.name === activeSection;
+          const isScrollLink = item.href.startsWith('#');
+          const isActive = isScrollLink && item.name === activeSection;
 
           return (
             <Link
@@ -56,22 +66,19 @@ export default function Header() {
               className={`
                 flex items-center justify-center h-full px-3 md:px-5 lg:px-6
                 text-center text-sm md:text-base font-semibold transition-all duration-200 ease-in-out
-                relative group whitespace-nowrap // Prevent wrapping
+                relative group whitespace-nowrap
                 ${isActive
-                  ? 'text-white scale-105' // Active text style
-                  : 'text-cyan-200 hover:text-white' // Inactive text style
+                  ? 'text-white scale-105'
+                  : 'text-cyan-200 hover:text-white'
                 }
               `}
             >
-              {/* Link Text */}
               {item.name}
-
-              {/* Active Indicator (Underline) */}
               <span
                 className={`
                   absolute bottom-0 left-0 w-full h-1 bg-cyan-300 rounded-t-full
-                  transition-all duration-300 ease-out transform scale-x-0 group-hover:scale-x-100
-                  ${isActive ? 'scale-x-100' : 'scale-x-0'}
+                  transition-all duration-300 ease-out transform
+                  ${isActive ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}
                 `}
               />
             </Link>

@@ -6,7 +6,6 @@ import UpstreamTarget from '@/components/UpstreamTarget';
 import KeyShifts from '@/components/KeyShifts';
 import MindsetBehaviour from '@/components/MindsetBehaviour';
 import OurProgress from '@/components/OurProgress';
-import Collaterals from '@/components/Collaterals';
 import Faq from '@/components/Faq';
 import SubmitStories from '@/components/SubmitStories';
 
@@ -21,7 +20,6 @@ export default function Home() {
         <KeyShifts />
         <MindsetBehaviour />
         <OurProgress />
-        <Collaterals />
         <Faq />
         <SubmitStories />
       </main>
