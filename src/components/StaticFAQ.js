@@ -1,36 +1,63 @@
 // src/components/StaticFAQ.js
 'use client';
-import { useState } from 'react';
+import { FaLightbulb, FaBook, FaUsers, FaChartLine } from 'react-icons/fa'; // Example icons
 
-function AccordionItem({ title, children }) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <div className="border-b border-gray-300"> {/* Use light-theme border */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex justify-between items-center w-full py-5 text-left"
-      >
-        <span className="text-xl font-semibold text-gray-800">{title}</span>
-        <span className="text-2xl text-teal-600">{isOpen ? '-' : '+'}</span>
-      </button>
-      {isOpen && <div className="pb-5 pr-10 text-gray-600">{children}</div>}
+// Helper component for the prompt buttons
+const PromptButton = ({ icon, title, subtitle, onClick }) => (
+  <button
+    onClick={onClick}
+    className="w-full p-4 text-left text-gray-200 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors"
+  >
+    <div className="flex items-center gap-3">
+      <span className="text-teal-400">{icon}</span>
+      <div className="flex flex-col">
+        <span className="font-semibold">{title}</span>
+        <span className="text-sm text-gray-400">{subtitle}</span>
+      </div>
     </div>
-  );
-}
+  </button>
+);
 
-export default function StaticFAQ() {
+// This component now accepts a prop: `onQuestionClick`
+export default function StaticFAQ({ onQuestionClick }) {
+    
+    const questions = [
+        { 
+          icon: <FaLightbulb />, 
+          title: "Explain PETRONAS's Net Zero Carbon Emissions by 2050 goal.", 
+          subtitle: "Click to ask the assistant" 
+        },
+        { 
+          icon: <FaBook />, 
+          title: "What are the 'Systemic Shifts'?", 
+          subtitle: "Click to ask the assistant" 
+        },
+        { 
+          icon: <FaUsers />, 
+          title: "How can I contribute to the 'Upstream Target'?", 
+          subtitle: "Click to ask the assistant" 
+        },
+        { 
+          icon: <FaChartLine />, 
+          title: "Summarize the latest progress report.", 
+          subtitle: "Click to ask the assistant" 
+        },
+    ];
+
     return (
-        <div className="bg-white p-8 rounded-lg shadow-xl">
-          <h3 className="text-2xl font-bold text-gray-800 mb-6">Top Questions</h3>
-          <AccordionItem title="Question 1: What is PETRONAS 2.0?">
-             <p>PETRONAS 2.0 is the vision to become an Integrated energy company by 2035, serving the world's energy needs safely, reliably, and sustainably.</p>
-          </AccordionItem>
-          <AccordionItem title="Question 2: What are the Key Shifts?">
-             <p>The two Key Shifts are "Accelerate Portfolio High-Grading" and "Deliver Advantaged Barrels".</p>
-          </AccordionItem>
-          <AccordionItem title="Question 3: What are the Desired Mindsets?">
-            <p>The three Desired Mindsets are "More Risk Tolerant", "Commercial Savvy", and "Growth Mindset".</p>
-          </AccordionItem>
+        <div className="p-6">
+          <h3 className="text-3xl font-bold text-white mb-8 text-center">How can NexusGPT help you today?</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {questions.map((q, i) => (
+                <PromptButton
+                    key={i}
+                    icon={q.icon}
+                    title={q.title}
+                    subtitle={q.subtitle}
+                    onClick={() => onQuestionClick(q.title)} // Send the title as the prompt
+                />
+            ))}
+          </div>
         </div>
     );
 }
