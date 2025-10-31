@@ -1,49 +1,199 @@
 // src/app/nexusgpt/page.js
-'use client'; // This page contains client components
+'use client'; 
 
+import { useState, useEffect, useRef } from 'react';
+import { FaUserCircle, FaRobot, FaTimes, FaSync, FaPlus } from 'react-icons/fa';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import ChatInterface from '../../components/ChatInterface';
-import StaticFAQ from '../../components/StaticFAQ';
 
+// --- This page now manages all chat logic ---
 export default function NexusGPTPage() {
   // --- IMPORTANT: Get your deployed function URL ---
-  // You must set this URL for the chat to work.
-  const chatFunctionUrl = "https://askchatbot-el2jwxb5bq-uc.a.run.app"; // <-- FIXED URL
+  const chatFunctionUrl = "https://askchatbot-el2jwxb5bq-uc.a.run.app"; // <-- PASTE YOUR URL HERE
+
+  const [chatInput, setChatInput] = useState('');
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const initialHistory = [
+    {
+      role: 'ai',
+      content: "Hi there! I'm the Nexus Assistant. How can I help you today?",
+      timestamp: new Date()
+    }
+  ];
+  const [chatHistory, setChatHistory] = useState(initialHistory);
+  const [suggestions, setSuggestions] = useState([]);
+  const chatContainerRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Auto-Scrolling
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatHistory]);
+
+  // Auto-Focus
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  // Main Chat Submission Handler
+  const handleChatSubmit = async (messageText) => {
+    if (!messageText.trim() || isChatLoading) return;
+
+    setChatInput('');
+    setSuggestions([]);
+    setIsChatLoading(true);
+
+    const newUserMessage = { 
+      role: 'user', 
+      content: messageText, 
+      timestamp: new Date() 
+    };
+    setChatHistory(prev => [...prev, newUserMessage]);
+
+    try {
+      const response = await fetch(chatFunctionUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageText })
+      });
+
+      if (!response.ok) {
+         let errorDetail = "The assistant isn't available right now.";
+         try { const errorData = await response.json(); errorDetail = errorData.error || errorDetail; } catch {}
+         throw new Error(errorDetail);
+      }
+
+      const data = await response.json();
+      const newAiMessage = { role: 'ai', content: data.reply, timestamp: new Date() };
+      setChatHistory(prev => [...prev, newAiMessage]);
+      setSuggestions(data.suggestions || []);
+    } catch (error) {
+      const errorMessage = { role: 'error', content: `Sorry, an error occurred: ${error.message}`, timestamp: new Date() };
+      setChatHistory(prev => [...prev, errorMessage]);
+    }
+    setIsChatLoading(false);
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    handleChatSubmit(chatInput);
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    handleChatSubmit(suggestion);
+    inputRef.current?.focus();
+  };
+
+  const handleClearChat = () => {
+    setChatHistory(initialHistory);
+    setSuggestions([]);
+    inputRef.current?.focus();
+  };
+
+  // Function to get a short snippet of the first user message
+  const getChatTitle = (history) => {
+    const firstUserMsg = history.find(m => m.role === 'user');
+    return firstUserMsg ? firstUserMsg.content : 'New Chat';
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-teal-900">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-teal-900 text-gray-200">
       <Header />
-
-      {/* --- ADDED relative z-10 --- */}
-      <main className="flex-grow container mx-auto p-4 md:p-8 relative z-10">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-extrabold text-white mb-4">
-            NexusGPT
-          </h1>
-          <p className="text-xl text-gray-300">
-            Your AI assistant for Systemic Shifts and more.
-          </p>
-        </div>
-
-        {/* --- New Two-Column Layout --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          
-          {/* Main Chat Area (takes 2/3 of the space) */}
-          <div className="lg:col-span-2 h-[75vh]">
-            <ChatInterface chatFunctionUrl={chatFunctionUrl} />
-          </div>
-
-          {/* Sidebar for Static FAQ (takes 1/3 of the space) */}
-          <div className="lg:col-span-1">
-            <StaticFAQ />
-          </div>
-
-        </div>
-        {/* --- End Two-Column Layout --- */}
-        
-      </main>
       
+      {/* Page Title */}
+      <div className="container mx-auto px-4 md:px-8 pt-8">
+        <h1 className="text-4xl font-extrabold text-white mb-2">NexusGPT</h1>
+        <p className="text-lg text-gray-300">Your AI assistant for Systemic Shifts and more.</p>
+      </div>
+
+      {/* --- Main Two-Column Content Area --- */}
+      <div className="flex-grow flex container mx-auto p-4 md:p-8 gap-6 h-[80vh]">
+
+        {/* --- 1. Left Sidebar (Chat History) --- */}
+        <nav className="w-64 flex-shrink-0 bg-gray-800 bg-opacity-30 p-4 rounded-lg flex flex-col">
+          <button 
+            onClick={handleClearChat}
+            className="w-full flex items-center justify-center gap-2 px-3 py-3 text-left text-white bg-teal-600 hover:bg-teal-700 rounded-md font-semibold"
+          >
+            <FaPlus />
+            New Chat
+          </button>
+          <h3 className="text-gray-400 text-sm font-semibold mt-6 mb-2 px-2 uppercase">Recent Chats</h3>
+          <div className="flex-grow flex flex-col gap-1 overflow-y-auto">
+            {/* This is a dummy list. We would need to save/load chats to make this real. */}
+            <div className="p-2 text-gray-300 truncate rounded bg-gray-700/50 cursor-pointer">
+              {getChatTitle(chatHistory)}
+            </div>
+            {/* Dummy entries */}
+            <div className="p-2 text-gray-300 truncate opacity-70 rounded hover:bg-gray-700/50 cursor-pointer">What is PETRONAS 2.0?</div>
+            <div className="p-2 text-gray-300 truncate opacity-70 rounded hover:bg-gray-700/50 cursor-pointer">Key Shifts Explanation...</div>
+          </div>
+        </nav>
+        {/* --- End Left Sidebar --- */}
+
+        {/* --- 2. Main Chat Window --- */}
+        <main className="flex-1 flex flex-col h-full bg-white rounded-lg shadow-xl">
+          {/* Chat History */}
+          <div ref={chatContainerRef} className="flex-grow p-4 md:p-6 space-y-4 overflow-y-auto bg-gray-50">
+            {chatHistory.map((msg, index) => (
+              <div key={index} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'ai' && <FaRobot className="text-2xl text-teal-600 mb-5 flex-shrink-0" />}
+                {msg.role === 'error' && <FaRobot className="text-2xl text-red-600 mb-5 flex-shrink-0" />}
+                <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                  <div className={`p-3 md:p-4 rounded-lg max-w-xs md:max-w-md shadow-md ${ msg.role === 'user' ? 'bg-gray-200 text-gray-800 rounded-br-none' : msg.role === 'ai' ? 'bg-teal-600 text-white rounded-bl-none' : 'bg-red-100 text-red-700 rounded-bl-none'}`}>
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                  <span suppressHydrationWarning={true} className="text-xs text-gray-400 mt-1 px-1">{msg.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                </div>
+                {msg.role === 'user' && <FaUserCircle className="text-2xl text-gray-400 mb-5 flex-shrink-0" />}
+              </div>
+            ))}
+            {isChatLoading && (
+               <div className="flex items-end gap-2 justify-start">
+                  <FaRobot className="text-2xl text-teal-600 mb-5 flex-shrink-0" />
+                  <div className="flex flex-col items-start">
+                      <div className="bg-teal-600 text-white p-3 md:p-4 rounded-lg max-w-xs md:max-w-md shadow-md rounded-bl-none">
+                          <div className="flex space-x-1 animate-pulse">
+                              <div className="w-2 h-2 bg-teal-200 rounded-full"></div>
+                              <div className="w-2 h-2 bg-teal-200 rounded-full animation-delay-200"></div>
+                              <div className="w-2 h-2 bg-teal-200 rounded-full animation-delay-400"></div>
+                          </div>
+                      </div>
+                       <span className="text-xs text-gray-400 mt-1 px-1">Typing...</span>
+                  </div>
+               </div>
+            )}
+          </div>
+          
+          {/* Suggestions Area */}
+          {suggestions.length > 0 && !isChatLoading && (
+            <div className="p-3 border-t border-gray-200 bg-gray-50 flex flex-wrap gap-2 justify-center">
+                <span className="text-xs text-gray-500 w-full text-center mb-1">Suggestions:</span>
+                {suggestions.map((s, i) => (
+                    <button key={i} onClick={() => handleSuggestionClick(s)} className="text-sm bg-white border border-gray-300 text-teal-700 hover:bg-teal-50 px-3 py-1 rounded-full transition-colors">
+                        {s}
+                    </button>
+                ))}
+            </div>
+          )}
+
+          {/* Input Bar */}
+          <form onSubmit={handleFormSubmit} className="flex border-t border-gray-300 relative items-center">
+            <textarea ref={inputRef} value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder="Type your question here..." rows="1" className="flex-grow p-4 pr-10 border-none outline-none resize-none disabled:bg-gray-100 text-gray-900 overflow-y-auto" style={{ maxHeight: '6em' }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleFormSubmit(e); }}}/>
+            {chatInput && !isChatLoading && (
+              <button type="button" onClick={() => setChatInput('')} className="absolute right-20 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1" title="Clear input">
+                <FaTimes />
+              </button>
+            )}
+            <button type="submit" disabled={isChatLoading || !chatInput.trim()} className="bg-teal-600 text-white px-6 py-4 font-semibold hover:bg-teal-700 transition-colors disabled:bg-gray-400">
+              Send
+            </button>
+          </form>
+        </main>
+
+      </div>
       <Footer />
     </div>
   );

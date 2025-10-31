@@ -2,44 +2,55 @@
 
 import Header from '../components/Header';
 import Hero from '../components/Hero';
-import HeroSection from '../components/HeroSection'; // Corrected import
+import HeroSection from '../components/HeroSection';
 import UpstreamTarget from '../components/UpstreamTarget';
 import KeyShifts from '../components/KeyShifts';
 import MindsetBehaviour from '../components/MindsetBehaviour';
 import OurProgress from '../components/OurProgress';
-// REMOVED Faq and SubmitStories imports
-import Footer from '../components/Footer'; // <-- NEW
+import Footer from '../components/Footer';
+import FadeInWhenVisible from '../components/animations/FadeInWhenVisible';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 font-sans flex flex-col">
       <Header />
-       {/* --- ADDED relative z-10 HERE --- */}
       <main className="flex-grow relative z-10">
         <section id="home">
           <Hero />
         </section>
-        <section id="upstream-target"> {/* Changed this ID to match the link */}
-           <HeroSection />
-        </section>
-        {/* We keep this section wrapper in case UpstreamTarget needs it */}
-        <section> 
-          <UpstreamTarget />
-        </section>
-        <section id="key-shifts">
-          <KeyShifts />
-        </section>
-        <section id="mindset-behaviour">
-          <MindsetBehaviour />
-        </section>
-        <section id="our-progress">
-          <OurProgress />
-        </section>
 
-        {/* --- REMOVED FAQ and SubmitStories SECTIONS --- */}
+        <FadeInWhenVisible key="upstream-target">
+          <section id="upstream-target">
+             <HeroSection />
+          </section>
+        </FadeInWhenVisible>
+
+        <FadeInWhenVisible key="upstream-target-details">
+          <section id="upstream-target-details">
+            <UpstreamTarget />
+          </section>
+        </FadeInWhenVisible>
+
+        <FadeInWhenVisible key="key-shifts">
+          <section id="key-shifts">
+            <KeyShifts />
+          </section>
+        </FadeInWhenVisible>
+
+        <FadeInWhenVisible key="mindset-behaviour">
+          <section id="mindset-behaviour">
+            <MindsetBehaviour />
+          </section>
+        </FadeInWhenVisible>
+
+        <FadeInWhenVisible key="our-progress">
+          <section id="our-progress">
+            <OurProgress />
+          </section>
+        </FadeInWhenVisible>
 
       </main>
-      <Footer /> {/* <-- NEW */}
+      <Footer />
     </div>
   );
 }

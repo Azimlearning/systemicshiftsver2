@@ -2,12 +2,12 @@
 'use client'; 
 
 import Link from 'next/link';
-import Image from 'next/image'; // We'll add the logo back
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { FaBars, FaTimes } from 'react-icons/fa'; // Icons for mobile menu
 
 export default function Header() {
-  const [activeSection, setActiveSection] = useState('home');
+  const [activeSection, setActiveSection] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -21,12 +21,12 @@ export default function Header() {
     { name: 'Submit Stories', href: '/submit-story' },
   ];
 
-  // Scroll tracking logic (unchanged)
+  // Scroll tracking logic
   useEffect(() => {
     const handleScroll = () => {
       let currentSection = '';
       navItems.forEach((item) => {
-        if (!item.href.startsWith('/#')) return; // Skip non-scrolling links
+        if (!item.href.startsWith('/#')) return;
         const sectionId = item.href.substring(2);
         const section = document.getElementById(sectionId);
         if (section) {
@@ -39,14 +39,13 @@ export default function Header() {
       setActiveSection(currentSection);
     };
 
-    // Only run scroll listener if we are on the main page
     if (window.location.pathname === '/') {
       window.addEventListener('scroll', handleScroll, { passive: true });
-      handleScroll(); // Initial check
+      handleScroll();
     }
     
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [navItems]); // Re-run if navItems changes
+  }, [navItems]);
 
   // Close mobile menu when a link is clicked
   const handleLinkClick = () => {
@@ -59,13 +58,13 @@ export default function Header() {
         
         {/* Logo */}
         <Link href="/" className="flex-shrink-0 flex items-center gap-2">
-           {/* Assuming you have this logo, if not, remove Image and use text */}
            <Image 
-             src="/Systemic-Shifts-Logo/systemic-shifts-logo-Solid.png" 
+             src="/Systemic-Shifts-Logo/systemic-shifts-logo-BlackWhite.png" 
              alt="Systemic Shifts Logo"
-             width={180}
-             height={36}
+             width={240}
+             height={48}
              priority
+             className="h-12 w-auto" // Ensure it sizes correctly
            />
         </Link>
 
@@ -111,16 +110,15 @@ export default function Header() {
       </div>
 
       {/* --- Mobile Menu Flyout --- */}
-      {/* This uses translate for a smooth slide-in animation */}
+      {/* This slides in from the left and is guaranteed to be on top */}
       <div 
         className={`
-          md:hidden fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-95 z-40
+          md:hidden fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-95 z-[100]
           transform transition-transform duration-300 ease-in-out
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
         <nav className="flex flex-col items-center justify-center h-full gap-6 pt-20">
-           {/* Close button at top right of flyout */}
            <button
             onClick={() => setIsMobileMenuOpen(false)}
             className="absolute top-5 right-5 text-white text-3xl p-2"
