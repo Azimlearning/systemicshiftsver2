@@ -2,7 +2,7 @@
 
 import Header from '../components/Header';
 import Hero from '../components/Hero';
-import HeroSection from '../components/HeroSection'; // Or whatever your Petronas 2.0 component is
+import HeroSection from '../components/HeroSection'; // Corrected import
 import UpstreamTarget from '../components/UpstreamTarget';
 import KeyShifts from '../components/KeyShifts';
 import MindsetBehaviour from '../components/MindsetBehaviour';
@@ -14,7 +14,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 font-sans flex flex-col">
       <Header />
-      <main className="flex-grow">
+       {/* --- ADDED relative z-10 HERE --- */}
+      <main className="flex-grow relative z-10">
         <section id="home">
           <Hero />
         </section>

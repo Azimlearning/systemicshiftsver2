@@ -8,7 +8,7 @@ export default function MiniChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
 
   // --- IMPORTANT: Get your deployed function URL ---
-  const chatFunctionUrl = process.env.NEXT_PUBLIC_CHAT_FUNCTION_URL || "https://askchatbot-el2jwxb5bq-uc.a.run.app"; // Use environment variable or paste directly
+  const chatFunctionUrl = "https://askchatbot-el2jwxb5bq-uc.a.run.app"; // <-- FIXED URL
 
   return (
     <>
@@ -46,4 +46,3 @@ export default function MiniChatWidget() {
     </>
   );
 }
-// Remember to replace YOUR_ASKCHATBOT_FUNCTION_URL_HERE

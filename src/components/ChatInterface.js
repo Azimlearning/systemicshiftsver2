@@ -94,7 +94,8 @@ export default function ChatInterface({ chatFunctionUrl }) {
               <div className={`p-3 md:p-4 rounded-lg max-w-xs md:max-w-md shadow-md ${ msg.role === 'user' ? 'bg-gray-200 text-gray-800 rounded-br-none' : msg.role === 'ai' ? 'bg-teal-600 text-white rounded-bl-none' : 'bg-red-100 text-red-700 rounded-bl-none'}`}>
                 <p className="whitespace-pre-wrap">{msg.content}</p>
               </div>
-              <span className="text-xs text-gray-400 mt-1 px-1">{msg.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+              {/* --- FIX: Added suppressHydrationWarning to the span --- */}
+              <span suppressHydrationWarning className="text-xs text-gray-400 mt-1 px-1">{msg.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
             </div>
             {msg.role === 'user' && <FaUserCircle className="text-2xl text-gray-400 mb-5 flex-shrink-0" />}
           </div>
