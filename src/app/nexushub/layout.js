@@ -35,10 +35,10 @@ export default function NexusHubLayout({ children }) {
       <Header /> {/* <-- Your main site header is here */}
 
       {/* Main content area with side nav */}
-      <div className="flex-grow container mx-auto p-4 md:p-8 flex gap-8">
+      <div className="flex-grow container mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
         
         {/* --- 2. THE NEW SIDE NAVBAR --- */}
-        <aside className="w-64 flex-shrink-0 bg-white p-6 rounded-lg shadow-lg">
+        <aside className="w-full lg:w-64 flex-shrink-0 bg-white p-6 rounded-lg shadow-lg mb-6 lg:mb-0">
           <nav className="flex flex-col gap-2">
             <SideNavLink href="/nexushub">
               <FaHome />

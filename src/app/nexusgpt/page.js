@@ -111,16 +111,16 @@ export default function NexusGPTPage() {
       </div>
 
       {/* --- Main Two-Column Content Area --- */}
-      <div className="flex-grow flex container mx-auto p-4 md:p-8 gap-6 h-[80vh]">
+      <div className="flex-grow flex flex-col lg:flex-row container mx-auto p-4 md:p-8 gap-6">
 
         {/* --- 1. Left Sidebar (Chat History) --- */}
-        <nav className="w-64 flex-shrink-0 bg-gray-800 bg-opacity-30 p-4 rounded-lg flex flex-col">
+        <nav className="w-full lg:w-64 flex-shrink-0 bg-gray-800 bg-opacity-30 p-4 rounded-lg flex flex-col mb-6 lg:mb-0">
           <ChatHistorySidebar onNewChat={handleClearChat} /> {/* Pass the handler */}
         </nav>
         {/* --- End Left Sidebar --- */}
 
         {/* --- 2. Main Chat Window --- */}
-        <main className="flex-1 flex flex-col h-full">
+        <main className="flex-1 flex flex-col bg-white rounded-lg shadow-xl overflow-hidden">
           
           {/* --- Top Bar: Upload Icon & Clear Chat --- */}
           <div className="flex justify-end items-center mb-4">
