@@ -148,7 +148,7 @@ export default function NexusGPTPage() {
                   {msg.role === 'ai' && <FaRobot className="text-2xl text-teal-600 mb-5 flex-shrink-0" />}
                   {msg.role === 'error' && <FaRobot className="text-2xl text-red-600 mb-5 flex-shrink-0" />}
                   <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                    <div className={`p-3 md:p-4 rounded-lg max-w-xs md:max-w-md shadow-md ${ msg.role === 'user' ? 'bg-gray-200 text-gray-800 rounded-br-none' : msg.role === 'ai' ? 'bg-teal-600 text-white rounded-bl-none' : 'bg-red-100 text-red-700 rounded-bl-none'}`}>
+                    <div className={`p-3 md:p-4 rounded-lg max-w-[70%] shadow-md break-words ${ msg.role === 'user' ? 'bg-gray-200 text-gray-800 rounded-br-none' : msg.role === 'ai' ? 'bg-teal-600 text-white rounded-bl-none' : 'bg-red-100 text-red-700 rounded-bl-none'}`}>
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                     </div>
                     <span className="text-xs text-gray-400 mt-1 px-1">{msg.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
@@ -160,7 +160,7 @@ export default function NexusGPTPage() {
                  <div className="flex items-end gap-2 justify-start">
                     <FaRobot className="text-2xl text-teal-600 mb-5 flex-shrink-0" />
                     <div className="flex flex-col items-start">
-                        <div className="bg-teal-600 text-white p-3 md:p-4 rounded-lg max-w-xs md:max-w-md shadow-md rounded-bl-none">
+                        <div className="bg-teal-600 text-white p-3 md:p-4 rounded-lg max-w-[70%] shadow-md break-words rounded-bl-none">
                             <div className="flex space-x-1 animate-pulse">
                                 <div className="w-2 h-2 bg-teal-200 rounded-full"></div>
                                 <div className="w-2 h-2 bg-teal-200 rounded-full animation-delay-200"></div>

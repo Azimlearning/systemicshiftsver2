@@ -1,0 +1,11 @@
+{
+  "name": "chat-function",
+  "description": "Chat function for Systemic Shifts",
+  "dependencies": {
+    "firebase-functions": "^5.0.1"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "private": true
+}

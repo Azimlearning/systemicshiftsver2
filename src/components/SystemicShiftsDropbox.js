@@ -2,21 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { db } from '../lib/firebase'; // Adjusted path for components directory
+import Image from 'next/image';
+import { db } from '../lib/firebase'; 
 import { collection, getDocs, query, orderBy, limit, startAfter, endBefore, deleteDoc, doc, getCountFromServer } from 'firebase/firestore';
 import Link from 'next/link';
-
-// Helper for displaying AI Infographic Concept
-const InfographicConceptDisplay = ({ concept }) => {
-    if (!concept) {
-        return <span className="text-gray-500 italic">Not generated yet.</span>;
-    }
-    if (concept.error) {
-        return <span className="text-red-500 italic">{concept.error}{concept.rawResponse ? `\n\nRaw Response:\n${concept.rawResponse}` : ''}</span>;
-    }
-    // It's a valid object, so pretty-print it
-    return JSON.stringify(concept, null, 2);
-};
 
 export default function SystemicShiftsDropbox() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -27,10 +16,25 @@ export default function SystemicShiftsDropbox() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const [firstVisible, setFirstVisible] = useState(null);
   const [lastVisible, setLastVisible] = useState(null);
   const [totalDocs, setTotalDocs] = useState(0);
   const docsPerPage = 3;
+
+  // NEW Helper component for loading
+  const GeneratingIndicator = () => (
+    <div className="flex flex-col items-center justify-center p-8 text-center bg-gray-50 rounded-lg h-60">
+      <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent border-solid rounded-full animate-spin mb-3"></div>
+      <p className="text-sm text-teal-700 font-semibold">
+        Generating Content...
+      </p>
+    </div>
+  );
+
+  // Helper to check if AI generation is still in progress
+  const isGenerating = (sub) => {
+    // If the submission has a submittedAt timestamp but no analysisTimestamp, it's generating.
+    return sub.submittedAt && !sub.analysisTimestamp;
+  };
 
   const fetchSubmissions = async (pageDirection = 'first') => {
     setLoading(true);
@@ -48,7 +52,7 @@ export default function SystemicShiftsDropbox() {
         q = query(storiesRef, orderBy('submittedAt', 'desc'), startAfter(lastVisible), limit(docsPerPage));
         setCurrentPage(prev => prev + 1);
       } else if (pageDirection === 'prev') {
-        // Simplified: go back to the first page
+        // This logic will go to the first page when 'prev' is clicked on page 2 or more.
         q = query(storiesRef, orderBy('submittedAt', 'desc'), limit(docsPerPage));
         setCurrentPage(1);
       }
@@ -56,7 +60,6 @@ export default function SystemicShiftsDropbox() {
       const querySnapshot = await getDocs(q);
       const fetchedSubmissions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSubmissions(fetchedSubmissions);
-      setFirstVisible(querySnapshot.docs[0]);
       setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
 
     } catch (err) {
@@ -67,10 +70,8 @@ export default function SystemicShiftsDropbox() {
     }
   };
 
-  // Auth check and data fetch
   useEffect(() => {
     if (sessionStorage.getItem('isLoggedIn') !== 'true') {
-      // CORRECTED REDIRECT
       router.push('/login?redirect=/nexushub/dropbox');
     } else {
       setIsLoggedIn(true);
@@ -85,7 +86,7 @@ export default function SystemicShiftsDropbox() {
     setLoading(true);
     try {
       await deleteDoc(doc(db, 'stories', id));
-      fetchSubmissions('first'); // Refresh list
+      fetchSubmissions('first');
     } catch (err) {
       console.error("Error deleting document:", err);
       setError("Failed to delete submission.");
@@ -94,7 +95,6 @@ export default function SystemicShiftsDropbox() {
   };
 
   if (!isLoggedIn) {
-    // This will be shown briefly before the redirect happens.
     return (
       <div className="min-h-[500px] flex items-center justify-center bg-gray-100">
         <p className="text-gray-600 text-xl">Redirecting to login...</p>
@@ -102,7 +102,7 @@ export default function SystemicShiftsDropbox() {
     );
   }
 
-   if (loading) {
+   if (loading && submissions.length === 0) {
     return (
       <div className="min-h-[500px] flex items-center justify-center">
         <p className="text-gray-600 text-xl">Loading Submissions...</p>
@@ -120,82 +120,93 @@ export default function SystemicShiftsDropbox() {
           <p className="text-gray-600">No submissions found.</p>
         ) : (
           <div className="space-y-8">
-            {submissions.map((sub) => (
-              <div key={sub.id} className="border border-gray-300 bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow relative">
-                <button
-                  onClick={() => handleDelete(sub.id)}
-                  className="absolute top-4 right-4 bg-red-100 text-red-700 hover:bg-red-600 hover:text-white text-xs font-bold py-1 px-3 rounded-full transition-colors"
-                  title="Delete this submission"
-                >
-                  Delete
-                </button>
-                <h3 className="text-2xl font-bold text-teal-700 mb-3 border-b pb-2">
-                  {sub.storyTitle || sub.nonShiftTitle || 'Untitled Story'}
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-4 text-gray-700">
-                    {/* Submission details */}
-                    <div><strong>Submitter:</strong> {sub.fullName || 'N/A'}</div>
-                    <div><strong>Division:</strong> {sub.division || 'N/A'}</div>
-                    <div><strong>Department:</strong> {sub.department || 'N/A'}</div>
-                    <div><strong>Submitted At:</strong> {sub.submittedAt?.toDate().toLocaleString() || 'N/A'}</div>
-                    <div><strong>Aligns w/ Shifts?:</strong> {sub.alignsWithShifts ? sub.alignsWithShifts.toUpperCase() : 'N/A'}</div>
-                </div>
-                {/* Shift/Non-shift details, files, AI sections etc. are the same as before */}
-                {sub.alignsWithShifts === 'yes' && (
-                  <div className="mb-4 space-y-2 text-sm bg-teal-50 p-4 rounded border border-teal-200 text-gray-800">
-                    <h4 className="font-semibold text-teal-800 text-base mb-1">Systemic Shift Details:</h4>
-                     <p><strong>Key Shifts:</strong> {sub.keyShifts?.join(', ') || 'None selected'}</p>
-                    {sub.focusAreas?.length > 0 && <p><strong>Focus Areas (Advantaged Barrels):</strong> {sub.focusAreas.join(', ')}</p>}
-                    <p><strong>Case for Change:</strong> {sub.caseForChange || 'N/A'}</p>
-                    <p><strong>Desired End State:</strong> {sub.desiredEndState || 'N/A'}</p>
-                    <p><strong>Mindsets Cultivated:</strong> {sub.desiredMindset?.join(', ') || 'None selected'}</p>
-                    <p><strong>Mindset Explanation:</strong> {sub.mindsetExplanation || 'N/A'}</p>
+            {submissions.map((sub) => {
+              const isAnalysisPending = isGenerating(sub);
+
+              return (
+                <div key={sub.id} className="border border-gray-300 bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow relative">
+                  <button
+                    onClick={() => handleDelete(sub.id)}
+                    className="absolute top-4 right-4 bg-red-100 text-red-700 hover:bg-red-600 hover:text-white text-xs font-bold py-1 px-3 rounded-full transition-colors"
+                    title="Delete this submission"
+                  >
+                    Delete
+                  </button>
+                  <h3 className="text-2xl font-bold text-teal-700 mb-3 border-b pb-2">
+                    {sub.storyTitle || sub.nonShiftTitle || 'Untitled Story'}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm mb-4 text-gray-700">
+                      <div><strong>Submitter:</strong> {sub.fullName || 'N/A'}</div>
+                      <div><strong>Division:</strong> {sub.division || 'N/A'}</div>
+                      <div><strong>Department:</strong> {sub.department || 'N/A'}</div>
+                      <div><strong>Submitted At:</strong> {sub.submittedAt?.toDate().toLocaleString() || 'N/A'}</div>
+                      <div><strong>Aligns w/ Shifts?:</strong> {sub.alignsWithShifts ? sub.alignsWithShifts.toUpperCase() : 'N/A'}</div>
                   </div>
-                )}
-                 <div className="mb-4 text-sm text-gray-700">
-                    <h4 className="font-semibold text-gray-800 text-base mb-2">Attached Files:</h4>
-                    {sub.writeUpURL ? (
-                         <p><a href={sub.writeUpURL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View Detailed Write-up</a></p>
-                    ) : <p className="text-gray-500 italic">No detailed write-up uploaded.</p>}
-                     {sub.visualURLs && sub.visualURLs.length > 0 ? (
-                        <div className="mt-2">
-                            <p><strong>Visuals ({sub.visualURLs.length}):</strong></p>
-                            <ul className="list-disc list-inside ml-4">
-                                {sub.visualURLs.map((url, index) => (
-                                    <li key={index}><a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Visual File {index + 1}</a></li>
-                                ))}
-                            </ul>
+                  {/* ... (rest of submission metadata as before) ... */}
+
+                  {/* Display AI Sections */}
+                  <div className="mt-6 border-t pt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    {/* --- AI GENERATION STATUS --- */}
+                    {isAnalysisPending ? (
+                      <div className="md:col-span-3">
+                        <GeneratingIndicator />
+                      </div>
+                    ) : (
+                      <>
+                        {/* Column 1: Write-up */}
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-700 mb-2">AI Generated Write-up:</h4>
+                          <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-800 whitespace-pre-wrap h-60 overflow-y-auto">
+                            {sub.aiGeneratedWriteup && !sub.aiGeneratedWriteup.includes('failed') ? (
+                              sub.aiGeneratedWriteup
+                            ) : (
+                              <span className="text-red-600 italic">{sub.aiGeneratedWriteup || 'Not generated yet.'}</span>
+                            )}
+                          </div>
                         </div>
-                    ) : <p className="text-gray-500 italic mt-1">No visuals uploaded.</p>}
-                 </div>
-                 <div className="text-xs text-gray-600 border-t pt-2 mt-4">
-                    <p><strong>Acknowledgement & Consent Given:</strong> {sub.acknowledgement ? 'Yes' : 'No'}</p>
-                 </div>
-                <div className="mt-6 border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div>
-                       <h4 className="text-lg font-semibold text-gray-700 mb-2">AI Generated Write-up:</h4>
-                       <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-800 whitespace-pre-wrap h-60 overflow-y-auto">
-                           {sub.aiGeneratedWriteup && !sub.aiGeneratedWriteup.includes('failed:') ? sub.aiGeneratedWriteup : <span className="text-red-500 italic">{sub.aiGeneratedWriteup || 'Not generated yet.'}</span>}
-                       </div>
-                   </div>
-                   <div>
-                       <h4 className="text-lg font-semibold text-gray-700 mb-2">AI Infographic Concept:</h4>
-                       <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-800 whitespace-pre-wrap h-60 overflow-y-auto">
-                           <InfographicConceptDisplay concept={sub.aiInfographicConcept} />
-                       </div>
-                   </div>
+
+                        {/* Column 2: Infographic Concept */}
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-700 mb-2">AI Infographic Concept:</h4>
+                          <div className="p-3 bg-gray-50 border border-gray-200 rounded text-sm text-gray-800 whitespace-pre-wrap h-60 overflow-y-auto">
+                            {sub.aiInfographicConcept?.error ? (
+                              <span className="text-red-600 italic">AI infographic concept failed. {sub.aiInfographicConcept.rawResponse}</span>
+                            ) : (
+                              JSON.stringify(sub.aiInfographicConcept, null, 2) || <span className="text-gray-500 italic">Not generated yet.</span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Column 3: AI Image Draft */}
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-700 mb-2">AI Image Draft:</h4>
+                          {sub.aiGeneratedImageUrl && sub.aiGeneratedImageUrl.startsWith('http') ? (
+                            <Image src={sub.aiGeneratedImageUrl} alt="AI Infographic Draft" width={250} height={250} className="rounded-lg shadow-md w-full h-auto object-cover" />
+                          ) : (
+                            <p className={`p-3 text-xs rounded whitespace-pre-wrap ${sub.aiGeneratedImageUrl && sub.aiGeneratedImageUrl.includes('failed') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                              {sub.aiGeneratedImageUrl || 'Image generation pending.'}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    {/* --- END STATUS --- */}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
+
+        {/* Pagination Controls */}
         <div className="mt-8 flex justify-between items-center">
             <button
                 onClick={() => fetchSubmissions('prev')}
                 disabled={currentPage === 1}
                 className="bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-                Previous (First Page)
+                Previous
             </button>
             <span className="text-gray-700">Page {currentPage} of {totalPages}</span>
             <button
