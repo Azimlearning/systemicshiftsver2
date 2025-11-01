@@ -13,27 +13,29 @@ export default function ChatHistorySidebar({ onNewChat }) {
   ];
 
   return (
-    <nav className="w-64 flex-shrink-0 bg-gray-800 bg-opacity-30 p-4 rounded-lg flex flex-col h-full">
-      <Link href="/" className="flex items-center gap-2 px-3 py-2 text-lg font-semibold text-white hover:bg-gray-800 rounded-md mb-4" title="Back to Main Site">
-        <FaHome />
-        Back to Site
-      </Link>
-      <button 
-        onClick={onNewChat} // <-- This now calls the function from the parent
-        className="w-full flex items-center justify-center gap-2 px-3 py-3 text-left text-white bg-teal-600 hover:bg-teal-700 rounded-md font-semibold"
-      >
-        <FaPlus />
-        New Chat
-      </button>
-      
-      <div className="flex-grow mt-6">
-        <h3 className="text-gray-400 text-sm font-semibold mb-2 px-2 uppercase">Recent Chats</h3>
-        <div className="flex flex-col gap-1 overflow-y-auto">
-          {dummyHistory.map((item, index) => (
-            <div key={index} className="p-2 text-gray-300 text-sm truncate opacity-70 rounded hover:bg-gray-700/50 cursor-pointer">
-              {item}
-            </div>
-          ))}
+    <nav className="w-64 flex-shrink-0 bg-gray-800 bg-opacity-30 p-4 rounded-lg flex flex-col justify-between">
+      <div>
+        <Link href="/" className="flex items-center gap-2 px-3 py-2 text-lg font-semibold text-white hover:bg-gray-800 rounded-md mb-4" title="Back to Main Site">
+          <FaHome />
+          Back to Site
+        </Link>
+        <button 
+          onClick={onNewChat} // <-- This now calls the function from the parent
+          className="w-full flex items-center justify-center gap-2 px-3 py-3 text-left text-white bg-teal-600 hover:bg-teal-700 rounded-md font-semibold"
+        >
+          <FaPlus />
+          New Chat
+        </button>
+        
+        <div className="mt-6">
+          <h3 className="text-gray-400 text-sm font-semibold mb-2 px-2 uppercase">Recent Chats</h3>
+          <div className="flex flex-col gap-1 overflow-y-auto">
+            {dummyHistory.map((item, index) => (
+              <div key={index} className="p-2 text-gray-300 text-sm truncate whitespace-nowrap text-ellipsis opacity-70 rounded hover:bg-gray-700/50 cursor-pointer">
+                {item}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

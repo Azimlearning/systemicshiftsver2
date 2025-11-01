@@ -1,42 +1,27 @@
-
 // functions/aiHelper.js
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getStorage } = require("firebase-admin/storage");
-const pdf = require('pdf-parse'); // For PDF extraction
-const mammoth = require('mammoth'); // For .docx extraction
-const { createWorker } = require('tesseract.js'); // For Image OCR
+const pdf = require('pdf-parse');
+const mammoth = require('mammoth');
+const { createWorker } = require('tesseract.js');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+// --- NEW: Import Model Definitions ---
+const { TEXT_GENERATION_MODELS, IMAGE_GENERATION_MODELS } = require('./ai_models');
+// --- END NEW ---
+
+const OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_IMAGE_URL = "https://openrouter.ai/api/v1/images/generations";
 
 /**
- * Defines the chain of AI models to try, in order gemini-2.0-flash-exp.
- * We use reliable, standard models.
- */
-const AI_MODEL_CHAIN = [
-  { type: 'gemini', model: 'gemini-pro' },
-  { type: 'gemini', model: 'gemini-2.0-flash-exp' },
-  { type: 'gemini', model: 'gemini-2.0-flash-lite' },
-  { type: 'gemini', model: 'gemini-2.0-flash-preview-image-generation' },
-  { type: 'gemini', model: 'gemini-2.0-flash' },
-  { type: 'gemini', model: 'gemini-2.5-flash-lite' },
-  { type: 'gemini', model: 'ggemini-2.5-flash' },
-  { type: 'openrouter', model: 'mistralai/mistral-7b-instruct:free' },
-  { type: 'openrouter', model: 'z-ai/glm-4-32b' },
-  { type: 'openrouter', model: 'openai/gpt-oss-20b:free' },
-  { type: 'openrouter', model: 'openai/gpt-5-nano' },
-  { type: 'openrouter', model: 'openai/gpt-oss-120b' },
-  { type: 'openrouter', model: 'z-ai/glm-4.5-air:free' },
-  { type: 'openrouter', model: 'openai/gpt-3.5-turbo' }
-];
-
-/**
- * Tries to generate content by iterating through a chain of AI models.
+ * Tries to generate text content by iterating through a model chain.
  */
 async function generateWithFallback(prompt, keys, outputJson = false) {
+  // Use the text chain
+  const AI_MODEL_CHAIN = TEXT_GENERATION_MODELS; 
   const fetch = (await import('node-fetch')).default;
   let lastError = null;
 
@@ -46,7 +31,7 @@ async function generateWithFallback(prompt, keys, outputJson = false) {
       let resultText;
 
       if (config.type === 'gemini') {
-        // --- Call Google Gemini API ---
+        // --- Call Google Gemini API (using API Key) ---
         const genAI = new GoogleGenerativeAI(keys.gemini);
         const model = genAI.getGenerativeModel({ model: config.model });
         
@@ -55,7 +40,7 @@ async function generateWithFallback(prompt, keys, outputJson = false) {
         resultText = result.response.text();
 
       } else if (config.type === 'openrouter') {
-        // --- Call OpenRouter API ---
+        // --- Call OpenRouter Chat API ---
         const headers = {
           'Authorization': `Bearer ${keys.openrouter}`,
           'Content-Type': 'application/json',
@@ -69,7 +54,7 @@ async function generateWithFallback(prompt, keys, outputJson = false) {
           response_format: outputJson ? { type: 'json_object' } : { type: 'text' },
         };
 
-        const response = await fetch(OPENROUTER_URL, {
+        const response = await fetch(OPENROUTER_CHAT_URL, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify(body),
@@ -77,7 +62,7 @@ async function generateWithFallback(prompt, keys, outputJson = false) {
 
         if (!response.ok) {
           const errText = await response.text();
-          throw new Error(`OpenRouter error (${response.status}): ${errText}`);
+          throw new Error(`OpenRouter error (${response.status}) on ${config.model}: ${errText}`);
         }
 
         const data = await response.json();
@@ -90,7 +75,7 @@ async function generateWithFallback(prompt, keys, outputJson = false) {
 
     } catch (error) {
       console.warn(`Failed to generate content with model ${config.model}:`, error.message);
-      lastError = error; // Save the error and try the next model
+      lastError = error;
     }
   }
 
@@ -100,71 +85,127 @@ async function generateWithFallback(prompt, keys, outputJson = false) {
 }
 
 /**
+ * Generates an image using OpenRouter Image Models with fallback.
+ */
+async function generateImage(infographicConcept, keys) {
+  const fetch = (await import('node-fetch')).default;
+  const IMAGE_MODEL_CHAIN = IMAGE_GENERATION_MODELS;
+  const concept = infographicConcept;
+
+  const visualPrompt = `Create a professional, flat-design corporate infographic for PETRONAS Upstream. Use a vertical layout. Color palette MUST primarily use TEAL, WHITE, and LIGHT GRAY.\nTitle: "${concept.title || 'Optimizing Operations'}"\nSections: Describe the content using simple, clear icons and bold metrics.\nKey Metrics: ${concept.keyMetrics?.map(m => `${m.label}: ${m.value}`).join('; ') || 'N/A'};\nVisual Style: ${concept.visualStyle || 'Flat design, minimal icons, professional, modern.'}\n\nDo NOT include text directly on the image. Focus on visual representation of the data and corporate themes.`;
+
+  let lastError = null;
+  for (const config of IMAGE_MODEL_CHAIN) {
+    try {
+      console.log(`Image Gen: Attempting model ${config.model}`);
+      
+      const headers = {
+        'Authorization': `Bearer ${keys.openrouter}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': `https://console.firebase.google.com/project/${process.env.GCP_PROJECT || 'systemicshiftv2'}`,
+        'X-Title': 'Systemic Shift AI Image',
+      };
+
+      const response = await fetch(OPENROUTER_IMAGE_URL, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          model: config.model,
+          prompt: visualPrompt,
+          size: "1024x1024",
+          n: 1,
+          response_format: "url", 
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Image API Error (${response.status}) on ${config.model}: ${JSON.stringify(errorData)}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.data && data.data.length > 0) {
+        const tempImageUrl = data.data[0].url;
+        console.log(`Image Gen: Successful URL received from ${config.model}.`);
+        return tempImageUrl; // Success!
+      }
+      
+      throw new Error("Image API did not return a valid URL in response data.");
+
+    } catch (error) {
+      console.warn(`Image Gen Failed (${config.model}): ${error.message}`);
+      lastError = error;
+    }
+  }
+
+  throw new Error(`All image models failed: ${lastError ? lastError.message : "Unknown error."}`);
+}
+
+/**
  * Downloads a file from Storage and extracts its text content.
- * Now handles PDF, DOCX, and Images (PNG, JPG, JPEG).
  */
 async function extractTextFromFiles(storyData) {
-  const fileUrl = storyData.writeUpURL; // We'll focus on the 'writeUp' file
-  if (!fileUrl) {
-    console.log("No writeUpURL found, skipping text extraction.");
-    return "";
-  }
-
-  const fileUrlObj = new URL(fileUrl);
-  const filePath = decodeURIComponent(fileUrlObj.pathname).replace(/^\/v0\/b\/[^\/]+\/o\//, '');
-  
-  const fileExt = path.extname(filePath).toLowerCase();
-  const allowedTextExt = ['.pdf', '.docx'];
-  const allowedImageExt = ['.png', '.jpg', '.jpeg'];
-
-  if (!allowedTextExt.includes(fileExt) && !allowedImageExt.includes(fileExt)) {
-    console.log(`File type (${fileExt}) is not supported for text extraction.`);
-    return "";
-  }
-
-  const bucket = getStorage().bucket("systemicshiftv2.firebasestorage.app"); // Use your bucket name
-  const tempFilePath = path.join(os.tmpdir(), path.basename(filePath));
-
-  try {
-    console.log(`Downloading file from Storage: ${filePath}`);
-    await bucket.file(filePath).download({ destination: tempFilePath });
-    console.log(`File downloaded to: ${tempFilePath}`);
-
-    let extractedText = "";
-    if (allowedTextExt.includes(fileExt)) {
-      // --- Handle PDF and DOCX ---
-      if (fileExt === '.pdf') {
-        const dataBuffer = fs.readFileSync(tempFilePath);
-        const data = await pdf(dataBuffer);
-        extractedText = data.text;
-      } else if (fileExt === '.docx') {
-        const result = await mammoth.extractRawText({ path: tempFilePath });
-        extractedText = result.value;
-      }
-    } else if (allowedImageExt.includes(fileExt)) {
-      // --- Handle Images (OCR) ---
-      console.log("Starting OCR process for image...");
-      const worker = await createWorker('eng');
-      const { data: { text } } = await worker.recognize(tempFilePath);
-      extractedText = text;
-      await worker.terminate();
-      console.log("OCR process finished.");
+    const fileUrl = storyData.writeUpURL;
+    if (!fileUrl) {
+        console.log("No writeUpURL found, skipping text extraction.");
+        return "";
     }
 
-    fs.unlinkSync(tempFilePath); // Clean up the temporary file
-    console.log("File text extracted successfully.");
-    return extractedText;
+    const fileUrlObj = new URL(fileUrl);
+    const filePath = decodeURIComponent(fileUrlObj.pathname).replace(/^\/v0\/b\/[^\/]+\/o\//, '');
+    
+    const fileExt = path.extname(filePath).toLowerCase();
+    const allowedTextExt = ['.pdf', '.docx'];
+    const allowedImageExt = ['.png', '.jpg', '.jpeg'];
 
-  } catch (error) {
-    console.error("Error during file text extraction:", error);
-    if (fs.existsSync(tempFilePath)) {
-      fs.unlinkSync(tempFilePath); // Clean up on error
+    if (!allowedTextExt.includes(fileExt) && !allowedImageExt.includes(fileExt)) {
+        console.log(`File type (${fileExt}) is not supported for text extraction.`);
+        return "";
     }
-    return ""; // Return empty string on failure
-  }
+
+    const bucket = getStorage().bucket("systemicshiftv2.firebasestorage.app");
+    const tempFilePath = path.join(os.tmpdir(), path.basename(filePath));
+
+    try {
+        console.log(`Downloading file from Storage: ${filePath}`);
+        await bucket.file(filePath).download({ destination: tempFilePath });
+        console.log(`File downloaded to: ${tempFilePath}`);
+
+        let extractedText = "";
+        if (allowedTextExt.includes(fileExt)) {
+            if (fileExt === '.pdf') {
+                const dataBuffer = fs.readFileSync(tempFilePath);
+                const data = await pdf(dataBuffer);
+                extractedText = data.text;
+            } else if (fileExt === '.docx') {
+                const result = await mammoth.extractRawText({ path: tempFilePath });
+                extractedText = result.value;
+            }
+        } else if (allowedImageExt.includes(fileExt)) {
+            console.log("Starting OCR process for image...");
+            const worker = await createWorker('eng');
+            const { data: { text } } = await worker.recognize(tempFilePath);
+            extractedText = text;
+            await worker.terminate();
+            console.log("OCR process finished.");
+        }
+
+        fs.unlinkSync(tempFilePath);
+        console.log("File text extracted successfully.");
+        return extractedText;
+
+    } catch (error) {
+        console.error("Error during file text extraction:", error);
+        if (fs.existsSync(tempFilePath)) {
+            fs.unlinkSync(tempFilePath);
+        }
+        return "";
+    }
 }
 
 module.exports = {
   generateWithFallback,
-  extractTextFromFiles
+  extractTextFromFiles,
+  generateImage // Export the new image function
 };

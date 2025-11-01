@@ -6,7 +6,7 @@ import { FaLightbulb, FaBook, FaUsers, FaChartLine } from 'react-icons/fa'; // E
 const PromptButton = ({ icon, title, subtitle, onClick }) => (
   <button
     onClick={onClick}
-    className="w-full p-4 text-left text-gray-200 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors"
+    className="w-full h-full p-4 text-left text-gray-200 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors"
   >
     <div className="flex items-center gap-3">
       <span className="text-teal-400">{icon}</span>
