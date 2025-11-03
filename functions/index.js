@@ -25,6 +25,86 @@ const storage = admin.storage();
 
 const bucket = storage.bucket("systemicshiftv2.firebasestorage.app"); 
 
+/**
+ * Attempts to parse a JSON object from a string that may contain extra text.
+ * Returns null if parsing fails.
+ */
+function tryParseJsonObject(rawText) {
+  if (!rawText || typeof rawText !== "string") {
+    return null;
+  }
+
+  const normalized = rawText
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, "\"")
+    .trim();
+
+  try {
+    return JSON.parse(normalized);
+  } catch (error) {
+    // ignore, try extracting substring
+  }
+
+  const start = normalized.indexOf("{");
+  const end = normalized.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    const candidate = normalized.slice(start, end + 1);
+    try {
+      return JSON.parse(candidate);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Ensures the infographic concept string is valid JSON, optionally repairing via another AI call.
+ */
+async function getInfographicConceptFromRaw(rawText, keys) {
+  const initialParse = tryParseJsonObject(rawText);
+  if (initialParse) {
+    return initialParse;
+  }
+
+  console.warn("Infographic concept JSON parse failed, attempting repair.");
+  const repairPrompt = `The following text was meant to be a JSON object that matches this schema:
+{
+  "title": string,
+  "tagline"?: string,
+  "overall_design_concept"?: {
+    "visual_metaphor"?: string,
+    "layout"?: string,
+    "color_palette"?: string,
+    "imagery"?: string,
+    "typography"?: string
+  },
+  "sections": Array<{"title": string, "content": string}> ,
+  "keyMetrics"?: Array<{"label": string, "value": string}>,
+  "visualStyle"?: object,
+  "colorPalette"?: object
+}
+
+Convert the text below into a valid JSON object that strictly matches the schema. Return ONLY the JSON object with double quotes and no additional explanation.
+
+---
+${rawText}
+---`;
+
+  try {
+    const repairedRaw = await generateWithFallback(repairPrompt, keys, true);
+    const repairedParse = tryParseJsonObject(repairedRaw);
+    if (repairedParse) {
+      return repairedParse;
+    }
+  } catch (repairError) {
+    console.warn("Infographic concept repair attempt failed:", repairError.message);
+  }
+
+  return null;
+}
+
 exports.submitStory = onRequest(
   { 
     region: 'us-central1',
@@ -159,24 +239,75 @@ exports.analyzeStorySubmission = onDocumentCreated(
     }
     fullContextText += `--- End Submission Details ---\n\n`;
 
-    const writeupPrompt = `You are an internal communications writer for PETRONAS Upstream... ${fullContextText} ... Generate the write-up now.`;
-    const infographicPrompt = `You are a concept designer... ${fullContextText} ... Format your final output as a JSON object with keys "title", "sections", "keyMetrics", "visualStyle", and "colorPalette". Generate the infographic concept (JSON object) now.`;
+    const writeupPrompt = `You are an internal communications writer for PETRONAS Upstream. Your task is to create a compelling, professional write-up for internal communications that highlights the systemic shift initiative described below.
+
+${fullContextText}
+
+Guidelines for the write-up:
+- Use a professional, engaging tone suitable for corporate internal communications
+- Highlight the key achievements, impacts, and value delivered
+- Connect the initiative to PETRONAS 2.0 vision and the Systemic Shifts framework
+- Include specific metrics and outcomes when available
+- Keep it concise but informative (approximately 300-500 words)
+- Use clear headings and bullet points for readability
+
+Generate the write-up now.`;
+
+    // Enhanced infographic prompt with style references from examples
+    const infographicStyleGuide = `Based on PETRONAS Upstream corporate infographic examples, follow these style guidelines:
+- Layout: Vertical layout with sections stacked from top to bottom
+- Color Palette: Primary Teal (#00A896 or similar), White backgrounds (#FFFFFF), Light Gray accents (#F5F5F5 or #E0E0E0), Dark Gray/Black text (#333333 or #1A1A1A)
+- Typography: Bold sans-serif for headings (Montserrat, Poppins), legible sans-serif for body (Lato, Open Sans)
+- Visual Elements: Modern minimal flat icons, clean professional illustrations, large bold metrics/numbers
+- Composition: Clear section breaks, generous white space, centered or left-aligned text blocks, large bold statistics`;
+
+    const infographicPrompt = `You are a concept designer for PETRONAS Upstream internal communications. Create a detailed infographic concept based on the following story submission:
+
+${fullContextText}
+
+${infographicStyleGuide}
+
+Your task is to design a concept for an infographic that will be generated. Format your response as a JSON object with the following structure:
+{
+  "title": "Short, impactful title (max 10 words)",
+  "sections": [
+    {"title": "Section title", "content": "Brief description of section content"},
+    ...
+  ],
+  "keyMetrics": [
+    {"label": "Metric name", "value": "Metric value or description"},
+    ...
+  ],
+  "visualStyle": {
+    "typography": "Description of typography choices",
+    "imagery": "Description of icon/illustration style",
+    "layout": "Vertical layout with sections"
+  },
+  "colorPalette": {
+    "primary": "#00A896 or similar teal",
+    "secondary": "#FFFFFF",
+    "accent": "#F5F5F5",
+    "text": "#333333"
+  }
+}
+
+Generate the infographic concept (JSON object) now. Ensure the JSON is valid and complete.`;
 
     let aiWriteup = "AI write-up generation failed.";
     let aiInfographicConcept = { error: "AI infographic concept generation failed." };
     let aiGeneratedImageUrl = "Image generation skipped/failed.";
 
     try {
-      const writeupRaw = await generateWithFallback(writeupPrompt, keys, TEXT_GENERATION_MODELS, false);
+      const writeupRaw = await generateWithFallback(writeupPrompt, keys, false);
       aiWriteup = writeupRaw; 
 
-      const infographicRaw = await generateWithFallback(infographicPrompt, keys, TEXT_GENERATION_MODELS, true);
-      
-      try {
-        aiInfographicConcept = JSON.parse(infographicRaw);
-      } catch (parseError) {
-         console.error("Failed to parse AI JSON response for infographic:", parseError);
-         aiInfographicConcept = { error: 'Concept failed to parse.', rawResponse: infographicRaw.substring(0, 500) };
+      const infographicRaw = await generateWithFallback(infographicPrompt, keys, true);
+
+      const parsedConcept = await getInfographicConceptFromRaw(infographicRaw, keys);
+      if (parsedConcept) {
+        aiInfographicConcept = parsedConcept;
+      } else {
+        aiInfographicConcept = { error: "Concept failed to parse.", rawResponse: infographicRaw.substring(0, 500) };
       }
 
       if (typeof aiInfographicConcept === 'object' && aiInfographicConcept.title) {
@@ -250,7 +381,7 @@ exports.askChatbot = onRequest(
 
       const fullPrompt = `${systemPrompt}\n\nUSER QUESTION: ${message}\n\nASSISTANT RESPONSE:`;
       
-      const aiResponseRaw = await generateWithFallback(fullPrompt, keys, TEXT_GENERATION_MODELS, false);
+      const aiResponseRaw = await generateWithFallback(fullPrompt, keys, false);
 
       let mainReply = aiResponseRaw;
       let suggestions = [];
