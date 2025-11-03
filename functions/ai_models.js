@@ -33,6 +33,7 @@ const IMAGE_GENERATION_MODELS = [
   { type: 'openrouter', model: 'stabilityai/stable-diffusion-xl' },
   // Backup: Multimodal Gemini via OpenRouter (Note: These often have specific pricing/availability)
   { type: 'openrouter', model: 'google/gemini-2.5-flash-image-preview' }, 
+  { type: 'openrouter', model: 'openai/gpt-5-image-mini' }, 
 ];
 
 module.exports = {
