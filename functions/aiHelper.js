@@ -41,8 +41,10 @@ async function generateWithFallback(prompt, keys, outputJson = false) {
 
       } else if (config.type === 'openrouter') {
         // --- Call OpenRouter Chat API ---
+        // --- CRITICAL FIX: Access key from environment variable and ensure it's a string ---
+        const openRouterKey = process.env.OPENROUTER_API_KEY;
         const headers = {
-          'Authorization': `Bearer ${keys.openrouter}`,
+          'Authorization': `Bearer ${openRouterKey.trim()}`, // Trim is now applied to the ENV var
           'Content-Type': 'application/json',
           'HTTP-Referer': `https://console.firebase.google.com/project/${process.env.GCP_PROJECT || 'systemicshiftv2'}`,
           'X-Title': 'Systemic Shift AI',
@@ -99,8 +101,10 @@ async function generateImage(infographicConcept, keys) {
     try {
       console.log(`Image Gen: Attempting model ${config.model}`);
       
+      // --- CRITICAL FIX: Access key from environment variable and ensure it's a string ---
+      const openRouterKey = process.env.OPENROUTER_API_KEY;
       const headers = {
-        'Authorization': `Bearer ${keys.openrouter}`,
+        'Authorization': `Bearer ${openRouterKey.trim()}`, // Trim is now applied to the ENV var
         'Content-Type': 'application/json',
         'HTTP-Referer': `https://console.firebase.google.com/project/${process.env.GCP_PROJECT || 'systemicshiftv2'}`,
         'X-Title': 'Systemic Shift AI Image',

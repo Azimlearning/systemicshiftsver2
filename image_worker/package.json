@@ -1,0 +1,6 @@
+{
+  "name": "image-worker-dummy",
+  "dependencies": {
+    "firebase-functions": "5.0.1"
+  }
+}
