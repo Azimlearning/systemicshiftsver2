@@ -10,10 +10,8 @@ const path = require("path");
 const os = require("os");
 const fs = require("fs");
 
-// --- UPDATED IMPORTS ---
-const { generateWithFallback, extractTextFromFiles, generateImage } = require("./aiHelper");
-const { TEXT_GENERATION_MODELS } = require("./ai_models"); // Import the new models file
-// --- END UPDATED IMPORTS ---
+const { generateWithFallback, extractTextFromFiles } = require("./aiHelper");
+const { TEXT_GENERATION_MODELS } = require("./ai_models");
 
 const { defineSecret } = require('firebase-functions/params');
 const geminiApiKey = defineSecret('GOOGLE_GENAI_API_KEY'); 
@@ -166,6 +164,8 @@ exports.analyzeStorySubmission = onDocumentCreated(
     let aiInfographicConcept = { error: "AI infographic concept generation failed." };
     let aiGeneratedImageUrl = "Image generation skipped/failed.";
 
+    const PYTHON_WORKER_URL = "https://imagegeneratorhttp-el2jwxb5bq-uc.a.run.app"; 
+
     try {
       const writeupRaw = await generateWithFallback(writeupPrompt, keys, TEXT_GENERATION_MODELS, false);
       aiWriteup = writeupRaw; 
@@ -178,17 +178,40 @@ exports.analyzeStorySubmission = onDocumentCreated(
          console.error("Failed to parse AI JSON response for infographic:", parseError);
          aiInfographicConcept = { error: 'Concept failed to parse.', rawResponse: infographicRaw.substring(0, 500) };
       }
-
+      
+      // --- 3. Generate the Image using Python Worker (via HTTP) ---
       if (typeof aiInfographicConcept === 'object' && aiInfographicConcept.title) {
-        console.log("Attempting to generate image from structured concept...");
-        aiGeneratedImageUrl = await generateImage(aiInfographicConcept, keys);
-      } else {
-        aiGeneratedImageUrl = "Image generation skipped: Concept failed to parse.";
-      }
+          console.log("Attempting to generate image using Python Worker via HTTP...");
+          
+          const visualPrompt = `Create a professional, flat-design corporate infographic for PETRONAS Upstream. Title: "${aiInfographicConcept.title}". Key Metrics: ${aiInfographicConcept.keyMetrics.map(m => `${m.label}: ${m.value}`).join('; ')}. Visual Style: Flat design, teal and white colors, minimal icons.`;
+          
+          const response = await fetch(PYTHON_WORKER_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt: visualPrompt })
+          });
 
+          if (!response.ok) {
+              const errorDetails = await response.text();
+              throw new Error(`Python Worker failed with status ${response.status}. Details: ${errorDetails.substring(0, 50)}...`);
+          }
+
+          const workerOutput = await response.json();
+          
+          if (workerOutput.status === 'ok') {
+              aiGeneratedImageUrl = workerOutput.image_url;
+              console.log("Python Worker Image Gen Success. URL received.");
+          } else {
+              throw new Error(`Python Worker Error: ${workerOutput.message || 'Unknown JSON error from script.'}`);
+          }
+      } else {
+          aiGeneratedImageUrl = "Image generation skipped: Concept failed to parse.";
+      }
     } catch (error) {
       console.error("Critical Error in AI Pipeline:", error);
-      if (aiGeneratedImageUrl.includes('failed')) aiGeneratedImageUrl = `Critical Image Error: ${error.message}`;
+      if (aiGeneratedImageUrl.includes('failed')) {
+          aiGeneratedImageUrl = 'Critical Image Error: ' + error.message;
+      }
     }
 
     try {
@@ -230,9 +253,6 @@ exports.askChatbot = onRequest(
         gemini: geminiApiKey.value(),
         openrouter: openRouterApiKey.value()
       };
-
-      // Use dynamic import for node-fetch
-      const fetch = (await import('node-fetch')).default;
 
       const systemPrompt = `You are a helpful AI assistant for the PETRONAS Upstream "Systemic Shifts" microsite named "Nexus Assistant".
       Answer questions concisely based on the context below and your general knowledge.

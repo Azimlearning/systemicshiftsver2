@@ -1,0 +1,7 @@
+{
+  "name": "image-worker-dummy",
+  "main": "main.py",
+  "dependencies": {
+    "firebase-functions": "5.0.1"
+  }
+}
