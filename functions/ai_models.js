@@ -30,9 +30,11 @@ const TEXT_GENERATION_MODELS = [
  */
 const IMAGE_GENERATION_MODELS = [
   // Primary image model via OpenRouter. (Using stabilityai/stable-diffusion-xl as it's the standard for graphics)
-  { type: 'openrouter', model: 'stabilityai/stable-diffusion-xl' },
+  { type: 'openrouter', model: 'openai/gpt-5-image-mini' },
   // Backup: Multimodal Gemini via OpenRouter (Note: These often have specific pricing/availability)
   { type: 'openrouter', model: 'google/gemini-2.5-flash-image-preview' }, 
+  { type: 'openrouter', model: 'google/gemini-2.5-flash-image' },
+  { type: 'openrouter', model: 'openai/gpt-5-image' },
 ];
 
 module.exports = {
