@@ -183,7 +183,10 @@ exports.analyzeStorySubmission = onDocumentCreated(
       if (typeof aiInfographicConcept === 'object' && aiInfographicConcept.title) {
           console.log("Attempting to generate image using Python Worker via HTTP...");
           
-          const visualPrompt = `Create a professional, flat-design corporate infographic for PETRONAS Upstream. Title: "${aiInfographicConcept.title}". Key Metrics: ${aiInfographicConcept.keyMetrics.map(m => `${m.label}: ${m.value}`).join('; ')}. Visual Style: Flat design, teal and white colors, minimal icons.`;
+          const visualPrompt = `Generate a clean, corporate infographic for PETRONAS Upstream. Use a vertical layout. Color palette must be TEAL and GREEN. 
+        Title: "${aiInfographicConcept.title}". 
+        Key Metrics: ${aiInfographicConcept.keyMetrics.map(m => `${m.label}: ${m.value}`).join('; ')}. 
+        Visual Style: Flat design, minimal icons, professional.`;
           
           const response = await fetch(PYTHON_WORKER_URL, {
               method: 'POST',
