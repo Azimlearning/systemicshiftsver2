@@ -1,20 +1,24 @@
-# To learn more about how to use Nix to configure your environment
-# see: https://developers.google.com/idx/guides/customize-idx-env
 { pkgs, ... }: {
-  # Which nixpkgs channel to use.
-  channel = "stable-24.05"; # or "unstable"
-  # Use https://search.nixos.org/packages to find packages
+  # Use a stable nixpkgs channel
+  channel = "stable-24.05";
+
+  # Packages available in the environment
   packages = [
     pkgs.nodejs_20
+    pkgs.python310Full
+    pkgs.pip
   ];
-  # Sets environment variables in the workspace
+
+  # Environment variables (add any custom ones here)
   env = {};
+
   idx = {
-    # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
+    # VS Code extensions (search on https://open-vsx.org/)
     extensions = [
       "google.gemini-cli-vscode-ide-companion"
     ];
-    # Enable previews
+
+    # Preview configuration
     previews = {
       enable = true;
       previews = {
@@ -24,13 +28,16 @@
         };
       };
     };
+
     # Workspace lifecycle hooks
     workspace = {
-      # Runs when a workspace is first created
+      # Runs when the workspace is first created
       onCreate = {
         npm-install = "npm install";
+        pip-install = "pip install -r python/requirements.txt";
       };
-      # Runs when the workspace is (re)started
+
+      # Runs when the workspace starts or restarts
       onStart = {
         start-server = "npm run dev";
       };
