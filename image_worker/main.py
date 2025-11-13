@@ -1,84 +1,85 @@
-# main.py (Python Cloud Function - Corrected for Generation)
 
 import functions_framework
-import json
 import os
 import requests
 from flask import jsonify
+import re
+import json
 
-# --- Configuration ---
-# CRITICAL: Use the chat completions endpoint for multimodal tasks
-OPENROUTER_CHAT_URL = "https://openrouter.ai/api/v1/chat/completions"
-# Use a reliable, fast image model that supports the text-to-image structure
-IMAGE_MODEL = "openai/gpt-5-image-mini" 
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY") 
+# --- Config ---
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# Using a standard, known image generation model
+MODEL = "openai/gpt-5-image-mini"
+API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 @functions_framework.http
 def generate_image_worker(request):
-    """
-    Parses the incoming HTTP request, calls the OpenRouter API for image generation,
-    and returns the image URL in a JSON response.
-    """
-    
-    # 1. Check for API Key
-    if not OPENROUTER_API_KEY:
-        return jsonify({"status": "error", "message": "Server configuration error: API key not set."}), 500
+    if not API_KEY:
+        return jsonify({"status": "error", "message": "API key missing"}), 500
 
-    # 2. Parse Incoming Request
-    request_json = request.get_json(silent=True)
-    if not request_json or 'prompt' not in request_json:
-        return jsonify({"status": "error", "message": "Invalid request: 'prompt' is required."}), 400
-    
-    prompt = request_json['prompt']
+    data = request.get_json(silent=True)
+    prompt = data.get("prompt") if data else None
+    if not prompt:
+        return jsonify({"status": "error", "message": "Missing 'prompt'"}), 400
 
-    # 3. API Call Headers
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "systemic-shifts-python-worker",
-        "X-Title": "Python Image Generator",
+        "X-Title": "Systemic Shifts Infographic Gen", # Optional: For OpenRouter analytics
     }
 
-    # 4. Payload (Corrected for Text-to-Image Generation)
+    # Standard payload for DALL-E 3 via a chat completions-style API
     payload = {
-        "model": IMAGE_MODEL,
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt # ONLY SEND THE TEXT PROMPT
-            }
-        ],
-        # CRITICAL: This is the structure that triggers image generation output
-        "extra_body": {
-            "response_format": {"type": "image"}, 
-            "image_config": {"aspect_ratio": "16:9"} # Standard landscape for infographic banner
-        }
+        "model": MODEL,
+        "messages": [{"role": "user", "content": prompt}],
     }
 
-    # 5. Request and Error Handling
     try:
-        response = requests.post(OPENROUTER_CHAT_URL, headers=headers, json=payload)
-        response.raise_for_status()  # Raise HTTPError for bad status codes (4xx or 5xx)
-        
-        data = response.json()
-        
-        # 6. Extract Image URL
-        if data.get("choices") and data["choices"][0].get("message"):
-            image_url = data["choices"][0]["message"]["content"]
-            
-            result = {
-                "status": "ok",
-                "image_url": image_url,
-                "model": IMAGE_MODEL
-            }
-            return jsonify(result), 200
-        else:
-            error_message = data.get('error', {}).get('message', 'API returned an unexpected response structure.')
-            return jsonify({"status": "error", "message": error_message}), 500
+        # Using a long timeout, as image generation can be slow
+        response = requests.post(OPENROUTER_URL, headers=headers, json=payload, timeout=180)
+        response.raise_for_status() # Raises HTTPError for bad responses (4xx or 5xx)
+        result = response.json()
 
-    except requests.exceptions.RequestException as e:
-        status_code = e.response.status_code if e.response is not None else 500
-        error_body = e.response.text if e.response is not None else "Timeout or network error"
-        return jsonify({"status": "error", "message": f"HTTP/Network Error: Status {status_code}", "details": error_body}), status_code
+        print(f"OpenRouter Full Response: {json.dumps(result, indent=2)}")
+
+        choices = result.get("choices", [])
+        if not choices:
+            return jsonify({"status": "error", "message": "No 'choices' in OpenRouter response", "data": result}), 500
+
+        content = choices[0].get("message", {}).get("content", "")
+        if not content:
+            return jsonify({"status": "error", "message": "Empty content in response choice", "data": result}), 500
+
+        # Defensive parsing for multiple image data formats
+        # 1. Markdown-wrapped data URI: ![...](data:image/png;base64,...)
+        match = re.search(r'!\\[.*?]\\((data:image/[a-zA-Z]+;base64,[^\\)]+)\')', content)
+        if match:
+            image_url = match.group(1)
+        # 2. Raw data URI: data:image/png;base64,...
+        elif content.startswith("data:image/"):
+            image_url = content
+        # 3. Direct URL: http...
+        elif content.startswith("http"):
+            image_url = content
+        # 4. Fallback: Assume it's a raw base64 string
+        else:
+            image_url = f"data:image/png;base64,{content}"
+
+        return jsonify({"status": "success", "image_url": image_url})
+
+    except requests.exceptions.HTTPError as e:
+        err_status = e.response.status_code
+        try:
+            # Try to parse a structured error from the API
+            err = e.response.json()
+            msg = err.get("error", {}).get("message", f"HTTP {err_status}")
+        except json.JSONDecodeError:
+            # Fallback if the error response isn't JSON
+            msg = e.response.text[:200] if e.response else "Unknown error"
+        # Return a detailed error response, including the payload that was sent
+        return jsonify({"status": "error", "message": msg, "code": err_status, "payload_sent": payload}), err_status
+
     except Exception as e:
-        return jsonify({"status": "error", "message": f"Unexpected Error: {str(e)}"}), 500
+        # Catch any other unexpected errors
+        print(f"Unexpected Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
