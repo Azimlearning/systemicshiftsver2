@@ -16,6 +16,8 @@ const { TEXT_GENERATION_MODELS } = require("./ai_models");
 const { defineSecret } = require('firebase-functions/params');
 const geminiApiKey = defineSecret('GOOGLE_GENAI_API_KEY');
 const openRouterApiKey = defineSecret('OPENROUTER_API_KEY');
+// The Hugging Face API key is no longer needed here. 
+// It is securely handled by the Python Cloud Function.
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -124,7 +126,7 @@ exports.analyzeStorySubmission = onDocumentCreated(
     { 
         document: 'stories/{storyId}',
         region: 'us-central1', 
-        secrets: [geminiApiKey, openRouterApiKey],
+        secrets: [geminiApiKey, openRouterApiKey], // <-- Removed huggingFaceApiKey
         timeoutSeconds: 540, 
         memory: '1GiB',
     },
@@ -140,7 +142,8 @@ exports.analyzeStorySubmission = onDocumentCreated(
 
     const keys = {
       gemini: geminiApiKey.value(),
-      openrouter: openRouterApiKey.value()
+      openrouter: openRouterApiKey.value(),
+      // <-- No longer need the Hugging Face key here
     };
     
     const extractedFileText = await extractTextFromFiles(storyData);
@@ -164,7 +167,8 @@ exports.analyzeStorySubmission = onDocumentCreated(
     let aiInfographicConcept = { error: "AI infographic concept generation failed." };
     let aiGeneratedImageUrl = "Image generation skipped/failed.";
 
-    const PYTHON_WORKER_URL = "https://imagegeneratorhttp-el2jwxb5bq-uc.a.run.app"; 
+    // --- Use the new, correct URL for the Python Cloud Function ---
+    const HF_WORKER_URL = "https://us-central1-systemicshiftv2.cloudfunctions.net/generate_image_huggingface";
 
     try {
       const writeupRaw = await generateWithFallback(writeupPrompt, keys, TEXT_GENERATION_MODELS, false);
@@ -179,34 +183,37 @@ exports.analyzeStorySubmission = onDocumentCreated(
          aiInfographicConcept = { error: 'Concept failed to parse.', rawResponse: infographicRaw.substring(0, 500) };
       }
       
-      // --- 3. Generate the Image using Python Worker (via HTTP) ---
+      // --- This logic correctly calls the new worker ---
       if (typeof aiInfographicConcept === 'object' && aiInfographicConcept.title) {
-          console.log("Attempting to generate image using Python Worker via HTTP...");
+          console.log("Attempting to generate image using Python Image Worker...");
           
           const visualPrompt = `Generate a clean, corporate infographic for PETRONAS Upstream. Use a vertical layout. Color palette must be TEAL and GREEN. 
         Title: "${aiInfographicConcept.title}". 
         Key Metrics: ${aiInfographicConcept.keyMetrics.map(m => `${m.label}: ${m.value}`).join('; ')}. 
         Visual Style: Flat design, minimal icons, professional.`;
           
-          const response = await fetch(PYTHON_WORKER_URL, {
+          const response = await fetch(HF_WORKER_URL, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+              },
               body: JSON.stringify({ prompt: visualPrompt })
           });
 
           if (!response.ok) {
-              const errorDetails = await response.text();
-              throw new Error(`Python Worker failed with status ${response.status}. Details: ${errorDetails.substring(0, 50)}...`);
+              const errorText = await response.text();
+              throw new Error(`Python Image worker failed with status ${response.status}. Details: ${errorText}`);
           }
 
           const workerOutput = await response.json();
 
-          if (workerOutput && (workerOutput.status === 'ok' || workerOutput.status === 'success')) {
-            aiGeneratedImageUrl = workerOutput.image_url || workerOutput.url || workerOutput.imageUrl || workerOutput.image_url;
-            console.log("Python Worker Image Gen Success. URL received:", aiGeneratedImageUrl);
+          if (workerOutput && workerOutput.status === 'ok' && workerOutput.image_url) {
+            aiGeneratedImageUrl = workerOutput.image_url;
+            console.log("Python Worker Image Gen Success.");
           } else {
-            console.error("Python Worker returned unexpected payload:", JSON.stringify(workerOutput).slice(0, 1000));
-            throw new Error(`Python Worker Error: ${workerOutput?.message || workerOutput?.error || 'Unknown JSON error from script.'}`);
+            const errorMessage = workerOutput?.message || "Unknown error from image worker";
+            console.error("Python Worker returned an error payload:", JSON.stringify(workerOutput));
+            throw new Error(`Image Worker Error: ${errorMessage}`);
           }
       } else {
           aiGeneratedImageUrl = "Image generation skipped: Concept failed to parse.";
@@ -241,7 +248,7 @@ exports.askChatbot = onRequest(
   (req, res) => {
   cors(req, res, async () => {
     if (req.method !== "POST") {
-      return res.status(405).send({ error: "Method Not Allowed" });
+      return res.status(400).send({ error: "Method Not Allowed" });
     }
 
     try {

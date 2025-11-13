@@ -1,8 +1,5 @@
 diffusers>=0.22.0
 transformers>=4.30.0
-torch
-torchvision
-torchaudio
 safetensors
 pillow
 fastapi
@@ -10,3 +7,8 @@ uvicorn
 functions-framework
 requests
 accelerate
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio
