@@ -5,20 +5,35 @@
   # Packages available in the environment
   packages = [
     pkgs.nodejs_20
-    pkgs.python310Full
-    pkgs.pip
+
+    # Provide Python 3.10 + pip and a few lightweight packages for development.
+    # Adjust list to include any small packages you need available at eval time.
+    (pkgs.python310.withPackages (ps: with ps; [
+      pip
+      setuptools
+      wheel
+      requests
+      uvicorn
+      fastapi
+      pillow
+      # For the new CPU-based diffusers script
+      torch
+      diffusers
+      transformers
+      accelerate
+    ]))
   ];
 
   # Environment variables (add any custom ones here)
+  # NOTE: Secrets like API keys should not be stored here directly.
+  # Use your IDE's secret management tools or environment-specific configuration.
   env = {};
 
   idx = {
-    # VS Code extensions (search on https://open-vsx.org/)
     extensions = [
       "google.gemini-cli-vscode-ide-companion"
     ];
 
-    # Preview configuration
     previews = {
       enable = true;
       previews = {
@@ -29,16 +44,23 @@
       };
     };
 
-    # Workspace lifecycle hooks
     workspace = {
-      # Runs when the workspace is first created
       onCreate = {
         npm-install = "npm install";
-        pip-install = "pip install -r python/requirements.txt";
+        # Create a lightweight venv and install project requirements there.
+        # This avoids mixing Nix and pip system installs and is robust for development.
+        setup-venv = ''
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip
+          if [ -f python/requirements.txt ]; then
+            pip install -r python/requirements.txt
+          fi
+        '';
       };
 
-      # Runs when the workspace starts or restarts
       onStart = {
+        # Use the venv-runner to ensure Python server (if any) uses installed venv packages
         start-server = "npm run dev";
       };
     };
