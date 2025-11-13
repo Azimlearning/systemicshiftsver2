@@ -14,14 +14,14 @@ const { generateWithFallback, extractTextFromFiles } = require("./aiHelper");
 const { TEXT_GENERATION_MODELS } = require("./ai_models");
 
 const { defineSecret } = require('firebase-functions/params');
-const geminiApiKey = defineSecret('GOOGLE_GENAI_API_KEY'); 
+const geminiApiKey = defineSecret('GOOGLE_GENAI_API_KEY');
 const openRouterApiKey = defineSecret('OPENROUTER_API_KEY');
 
 admin.initializeApp();
 const db = admin.firestore();
 const storage = admin.storage();
 
-const bucket = storage.bucket("systemicshiftv2.firebasestorage.app"); 
+const bucket = storage.bucket("systemicshiftv2.firebasestorage.app");
 
 exports.submitStory = onRequest(
   { 
@@ -200,12 +200,13 @@ exports.analyzeStorySubmission = onDocumentCreated(
           }
 
           const workerOutput = await response.json();
-          
-          if (workerOutput.status === 'ok') {
-              aiGeneratedImageUrl = workerOutput.image_url;
-              console.log("Python Worker Image Gen Success. URL received.");
+
+          if (workerOutput && (workerOutput.status === 'ok' || workerOutput.status === 'success')) {
+            aiGeneratedImageUrl = workerOutput.image_url || workerOutput.url || workerOutput.imageUrl || workerOutput.image_url;
+            console.log("Python Worker Image Gen Success. URL received:", aiGeneratedImageUrl);
           } else {
-              throw new Error(`Python Worker Error: ${workerOutput.message || 'Unknown JSON error from script.'}`);
+            console.error("Python Worker returned unexpected payload:", JSON.stringify(workerOutput).slice(0, 1000));
+            throw new Error(`Python Worker Error: ${workerOutput?.message || workerOutput?.error || 'Unknown JSON error from script.'}`);
           }
       } else {
           aiGeneratedImageUrl = "Image generation skipped: Concept failed to parse.";
