@@ -1,0 +1,113 @@
+For Internal Use - For Internal Distribution Only
+
+The Future Is Here —
+EPIC 2.0
+Turning Data Chaos into Exploration Clarity
+Imagine this: You’re deep into a challenging exploration project. The data is
+massive, the geology is complex, and deadlines are tight. What if you had a digital
+powerhouse that could process seismic data, simulate reservoirs, and help you
+make smarter decisions—all at lightning speed?
+That’s what EPIC 2.0 brings to PETRONAS Upstream and Petroleum Arrangement
+Contractors (PACs) in Malaysia. And as of 25 September 2025, it’s officially live.
+
+What Is EPIC 2.0
+EPIC 2.0 stands for Enterprise Platform for Integrated Computing. It is our nextgeneration High Performance Computing (HPC) and Artificial Intelligence (AI)
+platform, built to handle the scale and complexity of modern upstream
+challenges—from seismic imaging to reservoir modelling—with speed, precision,
+and intelligence.
+Key Capabilities
+•
+
+Sharper subsurface imaging
+Supports Elastic Full Waveform Inversion (EFWI), using pressure and shear
+wavefields to deliver high-resolution subsurface models in complex
+geological settings.
+
+•
+
+Smart, integrated Earth models
+Combines static and dynamic reservoir data with AI-driven interpretation to
+improve decision-making and streamline workflows. Includes enhanced
+model resolution, faster simulation runtimes, and scalable support for
+history matching and predictive modelling.
+
+•
+
+Accelerated processing
+Combines large-scale parallel computing, GPU acceleration, and optimised
+input/output strategies to reduce turnaround time from days to hours.
+
+•
+
+Optimised for internal innovation
+Runs PETRONAS proprietary algorithms at scale, turning internal technology
+into a competitive edge.
+
+Go-Live Milestone
+
+For Internal Use - For Internal Distribution Only
+
+EPIC 2.0 went live on 25 September 2025, supporting high-priority projects
+in Suriname, Turkmenistan, PM419, and SB409. This milestone was delivered
+through collaboration between Product Delivery Upstream, Upstream Technology
+Data and Innovation, and Group Procurement PT and HSSE.
+A full rollout is planned by mid-December 2025, with EPIC 2.0 ready to meet
+seismic imaging demand projected to reach 85,000 km² between 2025 and 2028.
+It also complements EPIC 1.0, which is currently operating at 80 to 90 percent
+utilization. By adding parallel processing capabilities, EPIC 2.0 ensures sustained
+performance for increasingly complex imaging operations.
+
+Strategic Technology Partnerships Powering Sustainability
+EPIC 2.0 is powered by DUG’s world-class HPC platform and its advanced MultiParameter Full Waveform Inversion seismic technologies. This foundation brings
+cutting-edge seismic processing capabilities and sustainability features to
+PETRONAS.
+DUG’s expertise enhances imaging precision and turnaround speed for critical
+exploration zones, while supporting PETRONAS internal innovation.
+EPIC 2.0 is also engineered for efficiency and environmental responsibility.
+•
+
+Immersion cooling system
+Servers are submerged in thermally conductive dielectric fluid, enabling
+direct-to-chip heat removal. This method improves heat transfer, reduces
+cooling energy use by up to 90 percent, and enhances hardware reliability.
+
+•
+
+PETRONAS-developed thermal fluids
+These fluids reduce overall power consumption by up to 50 percent and are
+being progressively adopted to optimise performance and sustainability.
+
+A Platform for the Future
+EPIC 2.0 is more than a technology upgrade—it’s a shift in how we work.
+•
+
+Faster simulations - quicker decisions
+
+•
+
+Integrated models - better collaboration
+
+•
+
+AI-powered workflows - smarter outcomes
+
+•
+
+Scalable HPC infrastructure - supports growing complexity
+
+•
+
+EFWI - deeper subsurface insight
+
+For Internal Use - For Internal Distribution Only
+
+•
+
+DUG partnership - global seismic expertise
+
+Next time you see a breakthrough in imaging, a faster turnaround, or smoother
+collaboration, know that it is powered behind the scenes by a platform built for
+scale, speed, and smarter decisions.
+EPIC 2.0 is here. Let’s put it to work.
+
+

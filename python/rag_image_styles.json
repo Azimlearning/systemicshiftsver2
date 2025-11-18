@@ -1,0 +1,227 @@
+{
+  "styles": [
+    {
+      "id": "example_1",
+      "filename": "example by 1.jpg",
+      "description": "Vertical layout with top title section, central metrics display, and bottom action items",
+      "layout": "vertical",
+      "layoutDetails": "Title at top, main content in center with large numbers/metrics, supporting info at bottom",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "white",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "large bold numbers",
+        "circular progress indicators",
+        "icon-based metrics",
+        "clean typography",
+        "minimal decorative elements"
+      ],
+      "composition": "balanced",
+      "keywords": ["metrics", "numbers", "progress", "achievement", "kpi"],
+      "useCase": "Best for stories with quantitative metrics and measurable outcomes"
+    },
+    {
+      "id": "example_2",
+      "filename": "example by 2.png",
+      "description": "Grid-based layout with multiple sections showing different aspects",
+      "layout": "grid",
+      "layoutDetails": "Multi-column grid with distinct sections, each highlighting different metrics or achievements",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "light teal",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "grid sections",
+        "bar charts",
+        "icon sets",
+        "sectioned content",
+        "structured layout"
+      ],
+      "composition": "structured",
+      "keywords": ["multiple", "sections", "comparison", "grid", "organized"],
+      "useCase": "Best for stories with multiple key points or comparative metrics"
+    },
+    {
+      "id": "example_3",
+      "filename": "example by 3.png",
+      "description": "Circular/radial layout with central focus and radiating elements",
+      "layout": "circular",
+      "layoutDetails": "Central element with radiating sections or circular progress indicators",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "cyan",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "circular charts",
+        "radial design",
+        "central focus",
+        "pie charts",
+        "circular progress"
+      ],
+      "composition": "centered",
+      "keywords": ["circular", "radial", "center", "focus", "pie"],
+      "useCase": "Best for stories with percentage-based metrics or central theme with supporting elements"
+    },
+    {
+      "id": "example_4",
+      "filename": "example by 4.jpg",
+      "description": "Timeline or process flow layout showing sequential steps",
+      "layout": "horizontal_flow",
+      "layoutDetails": "Left-to-right or top-to-bottom flow showing process steps or timeline",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "teal gradient",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "timeline",
+        "process steps",
+        "flow arrows",
+        "sequential elements",
+        "step indicators"
+      ],
+      "composition": "flow",
+      "keywords": ["process", "timeline", "steps", "flow", "sequence", "journey"],
+      "useCase": "Best for stories showing a process, journey, or sequential achievements"
+    },
+    {
+      "id": "systemic_shift_1",
+      "filename": "systemic shift story example 1.jpg",
+      "description": "Hero layout with large title and prominent visual elements",
+      "layout": "hero",
+      "layoutDetails": "Large title section at top, prominent central visual, supporting metrics below",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "bright green",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "hero title",
+        "large central image",
+        "prominent metrics",
+        "bold typography",
+        "visual hierarchy"
+      ],
+      "composition": "hero",
+      "keywords": ["hero", "prominent", "impact", "main", "featured"],
+      "useCase": "Best for high-impact stories that need strong visual presence"
+    },
+    {
+      "id": "systemic_shift_2",
+      "filename": "systemic shift story example 2.png",
+      "description": "Minimalist layout with clean spacing and focused content",
+      "layout": "minimal",
+      "layoutDetails": "Clean design with ample white space, focused on key message",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "light teal",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "minimal icons",
+        "clean typography",
+        "white space",
+        "focused content",
+        "simple charts"
+      ],
+      "composition": "minimal",
+      "keywords": ["minimal", "clean", "simple", "focused", "elegant"],
+      "useCase": "Best for stories with clear, focused messages that don't need complex visuals"
+    },
+    {
+      "id": "systemic_shift_3",
+      "filename": "systemic shift story example 3.png",
+      "description": "Dashboard-style layout with multiple data points and charts",
+      "layout": "dashboard",
+      "layoutDetails": "Multiple charts, graphs, and data visualizations in organized sections",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "chart colors",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "bar charts",
+        "line graphs",
+        "data tables",
+        "multiple visualizations",
+        "dashboard elements"
+      ],
+      "composition": "data_rich",
+      "keywords": ["data", "charts", "dashboard", "analytics", "metrics", "graphs"],
+      "useCase": "Best for stories with extensive data or multiple metrics to display"
+    },
+    {
+      "id": "systemic_shift_4",
+      "filename": "systemic shift story example 4.png",
+      "description": "Infographic-style with icons and visual storytelling",
+      "layout": "infographic",
+      "layoutDetails": "Icon-heavy design with visual storytelling elements and narrative flow",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "icon colors",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "icon illustrations",
+        "visual storytelling",
+        "narrative flow",
+        "decorative elements",
+        "illustrated sections"
+      ],
+      "composition": "illustrated",
+      "keywords": ["storytelling", "icons", "illustration", "narrative", "visual"],
+      "useCase": "Best for stories that benefit from visual storytelling and icon-based communication"
+    },
+    {
+      "id": "systemic_shift_5",
+      "filename": "systemic shift story example 5.jpg",
+      "description": "Balanced layout with equal emphasis on multiple elements",
+      "layout": "balanced",
+      "layoutDetails": "Even distribution of visual elements with balanced composition",
+      "colorPalette": {
+        "primary": "teal",
+        "secondary": "green",
+        "accent": "balanced colors",
+        "text": "dark teal"
+      },
+      "visualElements": [
+        "balanced sections",
+        "equal emphasis",
+        "harmonious layout",
+        "symmetrical elements",
+        "well-distributed content"
+      ],
+      "composition": "harmonious",
+      "keywords": ["balanced", "equal", "harmonious", "symmetrical", "distributed"],
+      "useCase": "Best for stories with multiple equally important points or balanced narratives"
+    }
+  ],
+  "defaultStyle": {
+    "layout": "vertical",
+    "colorPalette": {
+      "primary": "teal",
+      "secondary": "green",
+      "accent": "white",
+      "text": "dark teal"
+    },
+    "visualElements": [
+      "clean typography",
+      "minimal icons",
+      "professional design"
+    ],
+    "composition": "balanced"
+  }
+}
+

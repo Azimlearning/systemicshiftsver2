@@ -14,6 +14,7 @@ const fs = require("fs");
 
 const { generateWithFallback, extractTextFromFiles } = require("./aiHelper");
 const { TEXT_GENERATION_MODELS } = require("./ai_models");
+const { WriteupRetriever } = require("./rag_writeup_retriever");
 
 // Secrets
 const geminiApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
@@ -165,7 +166,25 @@ exports.analyzeStorySubmission = onDocumentCreated(
     }
     fullContextText += `--- End Submission Details ---\n\n`;
 
-    const writeupPrompt = `You are an internal communications writer for PETRONAS Upstream... ${fullContextText} ... Generate the write-up now.`;
+    // Build base writeup prompt
+    const baseWriteupPrompt = `You are an internal communications writer for PETRONAS Upstream. Your task is to create an engaging, professional write-up for an internal story submission. ${fullContextText} Generate the write-up now.`;
+
+    // Use RAG to enhance prompt with similar writeup examples
+    let writeupPrompt = baseWriteupPrompt;
+    try {
+      const writeupRetriever = new WriteupRetriever();
+      const retrievedExamples = writeupRetriever.retrieveExamples(storyData, 2);
+      
+      if (retrievedExamples && retrievedExamples.length > 0) {
+        writeupPrompt = writeupRetriever.enhancePrompt(baseWriteupPrompt, retrievedExamples);
+        console.log(`[analyzeStorySubmission] Enhanced writeup prompt with ${retrievedExamples.length} RAG example(s)`);
+      } else {
+        console.log(`[analyzeStorySubmission] No RAG examples retrieved, using base prompt`);
+      }
+    } catch (ragError) {
+      console.warn(`[analyzeStorySubmission] RAG retrieval failed: ${ragError.message}. Using base prompt.`);
+      writeupPrompt = baseWriteupPrompt;
+    }
     const infographicPrompt = `You are a concept designer... ${fullContextText} ... Format your final output as a JSON object with keys "title", "sections", "keyMetrics", "visualStyle", and "colorPalette". Generate the infographic concept (JSON object) now.`;
 
     let aiWriteup = "AI write-up generation failed.";

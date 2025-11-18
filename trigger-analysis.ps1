@@ -1,6 +1,6 @@
 # Script to manually trigger analysis for a story
 # This will run analyzeStorySubmission to generate aiInfographicConcept
-$storyId = "fnLFX4XNUvw0g2V5Ga74"  # Update with your document ID
+$storyId = "0LJOlNv8fghXHZzJKepw"  # Update with your document ID
 $functionUrl = "https://triggerimagegeneration-el2jwxb5bq-uc.a.run.app"
 
 Write-Host "`n🚀 Triggering image generation for story: $storyId" -ForegroundColor Yellow
