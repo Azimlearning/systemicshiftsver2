@@ -18,6 +18,7 @@ export default function Header() {
     { name: 'Our Progress', href: '/#our-progress' },
     { name: 'NexusHub', href: '/nexushub' },
     { name: 'NexusGPT', href: '/nexusgpt' },
+    { name: 'Ulearn', href: '/ulearn' },
     { name: 'Submit Stories', href: '/submit-story' },
   ];
 
