@@ -17,6 +17,7 @@ from google.cloud import firestore
 from google.cloud import storage
 from firebase_admin import initialize_app, credentials
 import requests
+from rag_image_retriever import ImageStyleRetriever
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -87,6 +88,14 @@ else:
 # Global pipeline (loaded once, reused)
 _pipeline: Optional[StableDiffusionPipeline] = None
 _use_api_fallback = False  # Flag to use API instead of local model
+
+# Initialize RAG style retriever
+try:
+    style_retriever = ImageStyleRetriever()
+    logger.info("RAG style retriever initialized")
+except Exception as e:
+    logger.warning(f"Failed to initialize RAG retriever: {e}. Continuing without RAG enhancement.")
+    style_retriever = None
 
 def get_pipeline() -> StableDiffusionPipeline:
     """Get or create the Stable Diffusion pipeline (singleton pattern)"""
@@ -304,14 +313,37 @@ def process_story(doc_id: str, story_data: dict):
         else:
             key_metrics_text = "Key metrics and achievements"
         
-        # Build prompt (keep it under 77 tokens to avoid truncation)
+        # Build base prompt (keep it under 77 tokens to avoid truncation)
         # Shorten the prompt to fit CLIP's 77 token limit
         title_short = title[:50] if len(title) > 50 else title
         metrics_short = key_metrics_text[:100] if len(key_metrics_text) > 100 else key_metrics_text
         
-        prompt = f"Corporate infographic for PETRONAS Upstream. Vertical layout. TEAL and GREEN colors. Title: {title_short}. Metrics: {metrics_short}. Flat design, minimal icons, professional."
+        base_prompt = f"Corporate infographic for PETRONAS Upstream. Vertical layout. TEAL and GREEN colors. Title: {title_short}. Metrics: {metrics_short}. Flat design, minimal icons, professional."
+        
+        # Use RAG to enhance prompt with style references
+        if style_retriever:
+            try:
+                # Retrieve relevant styles
+                retrieved_styles = style_retriever.retrieve_styles(title, key_metrics_text, top_k=2)
+                
+                if retrieved_styles:
+                    top_style = retrieved_styles[0]
+                    logger.info(f"Using RAG style reference: {top_style.get('id', 'unknown')} - {top_style.get('description', '')[:50]}")
+                    
+                    # Enhance prompt with style information
+                    prompt = style_retriever.enhance_prompt(base_prompt, retrieved_styles)
+                else:
+                    prompt = base_prompt
+                    logger.debug("No styles retrieved, using base prompt")
+            except Exception as e:
+                logger.warning(f"RAG retrieval failed: {e}. Using base prompt.")
+                prompt = base_prompt
+        else:
+            prompt = base_prompt
+            logger.debug("RAG retriever not available, using base prompt")
         
         logger.info(f"Generating image for: {title}")
+        logger.debug(f"Final prompt: {prompt[:150]}...")  # Log first 150 chars
         
         # Generate image
         image = generate_image(

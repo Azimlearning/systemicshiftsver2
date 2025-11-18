@@ -1,0 +1,85 @@
+For Internal Use - For Internal Distribution Only
+
+Decarbonisation at Tiong A: Simple Steps, Big Impact
+By PCSB-PMA in collaboration with Carbon Management Division (CMD)
+
+What if a single valve could help us get closer to our 2030 climate goals? At Tiong A, a simple
+question led to a powerful answer showing that small, practical steps can deliver big wins for
+both the environment and our business.
+
+A Persistent Challenge
+Tiong A, part of the Peninsular Malaysia Asset (PMA) under PETRONAS Carigali Sdn. Bhd.
+(PCSB), recently underwent a major brownfield modification through the Integrated Bekok Oil
+(IBO) project. The goal was clear: reduce flaring and support PETRONAS Upstream’s
+decarbonisation journey.
+Tiong A, part of PM9 fields under Peninsular Malaysia Asset (PMA) operated by PETRONAS
+Carigali Sdn. Bhd. (PCSB), recently underwent a major brownfield modification through the
+PM9 Simplification (PM9S) project. The goal was clear: reduce flaring and support
+PETRONAS Upstream’s decarbonisation journey. reducing long term PM9 OPEX and reduce
+overall PM9 PSC GHG Emission
+However, following the commissioning of the IBO project in October 2024, the team
+encountered an unexpected challenge that put their resolve and the project’s objectives to the
+test. Despite the upgrades and sufficient gas handling capacity, Tiong A’s flaring levels
+remained persistently elevated, averaging up to 11 MMscf/d. This translated to 0.26 million
+tCO₂e per year, threatening Upstream’s 2030 target to cap absolute GHG emissions at 17.25
+million tCO₂e.
+
+Commented [WW1]: Bekok ni hub for tiong, kena
+explain or maybe map skit. Tak dapat nak relate project
+Bekok tapi cakap pasal Tiong.
+Commented [M(2R1]: Propose to replace with PM9
+Simplification and to include map of PM9
+Commented [W(3]: Bekok ni hub for tiong, kena explain
+or maybe map skit. Tak dapat nak relate project Bekok
+tapi cakap pasal Tiong.
+Commented [WW4]: Challenge apa
+
+Teamwork and Technology in Action
+Determined to tackle the issue, a multidisciplinary taskforce sprang into action. Their mission
+was clear: to identify and eliminate non-routine flaring sources using solutions that were both
+cost-effective and practical.
+The team’s strategy blended data-driven analysis with hands-on fieldwork:
+• Acoustic emission testing allowed the team to “listen” for hidden leaks across all
+high-pressure flare sources, revealing issues that might otherwise go undetected.
+•
+P&ID reviews and thorough on-site valve inspections helped zero in on the most likely
+trouble spots.
+• Through this rigorous investigation, the team pinpointed passing manual bypass and
+control valves specifically PCV-135D and PCV-120A as the main contributors to
+excessive flaring during normal operations.
+
+Short-term solution: During a one-day ESD shutdown in March 2025, the team temporarily
+blinded the PCV-135D manual bypass valve and recalibrated critical control valves. All actions
+were risk-assessed and approved to ensure operational safety.
+Long-term solution: In June 2025, during a scheduled maintenance shutdown (MSD), the
+team replaced the passing manual bypass valve, upgraded the PCV-135D trim, and adjusted
+the PCV-120A stem, permanently addressing the root causes.
+
+Results That Matter
+The impact of these targeted interventions was both immediate and far-reaching.
+
+Commented [WW5]: Emergency Shutdown (ESD)
+
+For Internal Use - For Internal Distribution Only
+
+Phase 1 saw flaring rates at Tiong A plummet from 11 MMscf/d to just 4 MMscf/d after the
+initial blinding of the bypass valve and recalibration of controls. This single step alone
+translated into a reduction of 0.21 million tCO₂e per year, preventing an estimated RM32.19
+million in annual hydrocarbon losses that would have otherwise gone up in smoke.
+Building on this momentum, Phase 2 delivered even greater results. Permanent rectification
+during the June 2025 maintenance shutdown further reduced flaring to an impressive 1.5
+MMscf/d, cutting an additional 0.073 million tCO₂e and saving another RM11.5 million per
+year.
+These achievements mean that Tiong A now consistently operates below its daily flaring limit
+of 1.7 MMscf/d, not only meeting but exceeding operational KPIs. More importantly, this
+success story directly supports Upstream’s 2030 target to cap absolute GHG emissions at
+17.25 million tCO₂e.
+A Blueprint for the Future
+This initiative is more than a technical fix. It’s a model for how Upstream can deliver on
+“Systemic Shift #8: Operate it Right,” maximising production while minimising carbon intensity.
+It proves that operational efficiency and sustainability go hand-in-hand, and that every staff
+member has a role to play in decarbonisation.
+
+Commented [WW6]: Ikut systemic shifts
+
+
