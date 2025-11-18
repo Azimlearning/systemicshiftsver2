@@ -1,34 +1,26 @@
 {
   "name": "functions",
-  "description": "Cloud Functions for Firebase",
-  "scripts": {
-    "lint": "eslint .",
-    "serve": "firebase emulators:start --only functions",
-    "shell": "firebase functions:shell",
-    "start": "npm run shell",
-    "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
-  },
-  "engines": {
-    "node": "18"
-  },
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions - Hugging Face image generator",
   "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "start": "functions-framework --target=generateImageHf --signature-type=http",
+    "lint": "echo \"No linter configured\""
+  },
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@google-cloud/secret-manager": "5.6.0",
     "@google-cloud/storage": "^7.11.0",
-    "@google/generative-ai": "^0.7.1",
     "busboy": "^1.6.0",
     "cors": "^2.8.5",
     "firebase-admin": "^12.1.0",
-    "firebase-functions": "^5.0.1",
-    "mammoth": "^1.7.2",
-    "node-fetch": "^3.3.2",
+    "firebase-functions": "^7.0.0",
+    "mammoth": "^1.6.0",
+    "node-fetch": "2.7.0",
     "pdf-parse": "^1.1.1",
-    "tesseract.js": "^5.1.0"
-  },
-  "devDependencies": {
-    "eslint": "^8.15.0",
-    "eslint-config-google": "^0.14.0",
-    "firebase-functions-test": "^3.1.0"
-  },
-  "private": true
+    "tesseract.js": "^5.0.4"
+  }
 }

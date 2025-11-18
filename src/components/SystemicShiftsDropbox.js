@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { db } from '../lib/firebase'; 
-import { collection, getDocs, query, orderBy, limit, startAfter, endBefore, deleteDoc, doc, getCountFromServer } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, startAfter, endBefore, deleteDoc, doc, getCountFromServer, onSnapshot } from 'firebase/firestore';
 import Link from 'next/link';
 
 export default function SystemicShiftsDropbox() {
+  // Initialize login state - always start with false to avoid hydration mismatch
+  // Will be updated in useEffect (client-side only)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +21,9 @@ export default function SystemicShiftsDropbox() {
   const [lastVisible, setLastVisible] = useState(null);
   const [totalDocs, setTotalDocs] = useState(0);
   const docsPerPage = 3;
+  
+  // Store unsubscribe function for cleanup (use ref so cleanup can access latest value)
+  const unsubscribeRef = useRef(null);
 
   // NEW Helper component for loading
   const GeneratingIndicator = () => (
@@ -32,52 +37,136 @@ export default function SystemicShiftsDropbox() {
 
   // Helper to check if AI generation is still in progress
   const isGenerating = (sub) => {
-    // If the submission has a submittedAt timestamp but no analysisTimestamp, it's generating.
-    return sub.submittedAt && !sub.analysisTimestamp;
+    // Show spinner if:
+    // 1. Has submittedAt but no analysisTimestamp (AI analysis not started)
+    // 2. Has analysisTimestamp but image is still pending (image generation in progress)
+    const hasNoAnalysis = sub.submittedAt && !sub.analysisTimestamp;
+    const imagePending = sub.analysisTimestamp && 
+                         (sub.aiGeneratedImageUrl === "Pending local generation" || 
+                          !sub.aiGeneratedImageUrl || 
+                          (sub.aiGeneratedImageUrl && !sub.aiGeneratedImageUrl.startsWith('http')));
+    return hasNoAnalysis || imagePending;
   };
 
-  const fetchSubmissions = async (pageDirection = 'first') => {
+  // Use ref to store lastVisible to avoid recreating callback
+  const lastVisibleRef = useRef(null);
+  
+  const setupRealtimeListener = useCallback((pageDirection = 'first') => {
+    // Unsubscribe from previous listener if it exists
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
     setLoading(true);
     setError('');
+    
     try {
       const storiesRef = collection(db, 'stories');
       let q;
 
       if (pageDirection === 'first') {
-        const countSnapshot = await getCountFromServer(storiesRef);
-        setTotalDocs(countSnapshot.data().count);
+        // Get total count (this is a one-time operation, not real-time)
+        getCountFromServer(storiesRef).then(countSnapshot => {
+          setTotalDocs(countSnapshot.data().count);
+        }).catch(err => {
+          console.error("Error getting count:", err);
+        });
+        
         q = query(storiesRef, orderBy('submittedAt', 'desc'), limit(docsPerPage));
         setCurrentPage(1);
-      } else if (pageDirection === 'next' && lastVisible) {
-        q = query(storiesRef, orderBy('submittedAt', 'desc'), startAfter(lastVisible), limit(docsPerPage));
+        lastVisibleRef.current = null;
+      } else if (pageDirection === 'next' && lastVisibleRef.current) {
+        q = query(storiesRef, orderBy('submittedAt', 'desc'), startAfter(lastVisibleRef.current), limit(docsPerPage));
         setCurrentPage(prev => prev + 1);
       } else if (pageDirection === 'prev') {
         // This logic will go to the first page when 'prev' is clicked on page 2 or more.
         q = query(storiesRef, orderBy('submittedAt', 'desc'), limit(docsPerPage));
         setCurrentPage(1);
+        lastVisibleRef.current = null;
       }
 
-      const querySnapshot = await getDocs(q);
-      const fetchedSubmissions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setSubmissions(fetchedSubmissions);
-      setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+      // Set up real-time listener using onSnapshot
+      const unsubscribe = onSnapshot(
+        q,
+        (querySnapshot) => {
+          const fetchedSubmissions = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            // Log for debugging
+            console.log(`[Real-time] Doc ${doc.id}:`, {
+              hasAnalysis: !!data.analysisTimestamp,
+              imageUrl: data.aiGeneratedImageUrl?.substring(0, 60) || 'none',
+              isGenerating: !data.analysisTimestamp || data.aiGeneratedImageUrl === "Pending local generation"
+            });
+            return { 
+              id: doc.id, 
+              ...data
+            };
+          });
+          setSubmissions(fetchedSubmissions);
+          
+          // Update lastVisible for pagination (both state and ref)
+          if (querySnapshot.docs.length > 0) {
+            const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+            setLastVisible(newLastVisible);
+            lastVisibleRef.current = newLastVisible;
+          }
+          
+          setLoading(false);
+        },
+        (err) => {
+          console.error("Error in real-time listener:", err);
+          setError('Failed to load submissions.');
+          setLoading(false);
+        }
+      );
+      
+      console.log('[Real-time] Listener set up for page:', pageDirection);
+
+      // Store unsubscribe function in ref
+      unsubscribeRef.current = unsubscribe;
 
     } catch (err) {
-      console.error("Error fetching submissions:", err);
+      console.error("Error setting up listener:", err);
       setError('Failed to load submissions.');
-    } finally {
       setLoading(false);
     }
+  }, [docsPerPage]);
+  
+  // Keep fetchSubmissions for backward compatibility (used by handleDelete)
+  const fetchSubmissions = (pageDirection = 'first') => {
+    setupRealtimeListener(pageDirection);
   };
 
   useEffect(() => {
-    if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+    // Check login status on client side only (avoids hydration mismatch)
+    if (typeof window === 'undefined') return;
+    
+    const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+    
+    // Update login state - necessary for client-side sessionStorage check
+    // This is a valid use case: checking client-side storage and updating state accordingly
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsLoggedIn(loggedIn);
+    
+    if (!loggedIn) {
       router.push('/login?redirect=/nexushub/dropbox');
-    } else {
-      setIsLoggedIn(true);
-      fetchSubmissions('first');
+      return;
     }
-  }, [router]);
+    
+    // Set up real-time Firestore listener
+    console.log('[Init] Setting up real-time listener...');
+    setupRealtimeListener('first');
+    
+    // Cleanup: unsubscribe from listener when component unmounts
+    return () => {
+      console.log('[Cleanup] Unsubscribing from listener...');
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, [router, setupRealtimeListener]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this submission? This action cannot be undone.")) {
@@ -181,8 +270,21 @@ export default function SystemicShiftsDropbox() {
                         {/* Column 3: AI Image Draft */}
                         <div>
                           <h4 className="text-lg font-semibold text-gray-700 mb-2">AI Image Draft:</h4>
-                          {sub.aiGeneratedImageUrl && sub.aiGeneratedImageUrl.startsWith('http') ? (
-                            <Image src={sub.aiGeneratedImageUrl} alt="AI Infographic Draft" width={250} height={250} className="rounded-lg shadow-md w-full h-auto object-cover" />
+                          {sub.aiGeneratedImageUrl && 
+                           (sub.aiGeneratedImageUrl.startsWith('http') || sub.aiGeneratedImageUrl.startsWith('https://storage.googleapis.com')) ? (
+                            <div className="relative w-full h-60 bg-gray-100 rounded-lg overflow-hidden">
+                              <Image 
+                                src={sub.aiGeneratedImageUrl} 
+                                alt="AI Infographic Draft" 
+                                width={250} 
+                                height={250} 
+                                className="rounded-lg shadow-md w-full h-full object-contain"
+                                onError={(e) => {
+                                  console.error('Image load error:', sub.aiGeneratedImageUrl);
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            </div>
                           ) : (
                             <p className={`p-3 text-xs rounded whitespace-pre-wrap ${sub.aiGeneratedImageUrl && sub.aiGeneratedImageUrl.includes('failed') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
                               {sub.aiGeneratedImageUrl || 'Image generation pending.'}

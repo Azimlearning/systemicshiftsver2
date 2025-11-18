@@ -1,8 +1,10 @@
 // functions/index.js
 
+// functions/index.js
+
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const functions = require("firebase-functions");
+const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const cors = require("cors")({ origin: true });
 const Busboy = require("busboy");
@@ -10,102 +12,106 @@ const path = require("path");
 const os = require("os");
 const fs = require("fs");
 
-// --- UPDATED IMPORTS ---
-const { generateWithFallback, extractTextFromFiles, generateImage } = require("./aiHelper");
-const { TEXT_GENERATION_MODELS } = require("./ai_models"); // Import the new models file
-// --- END UPDATED IMPORTS ---
+const { generateWithFallback, extractTextFromFiles } = require("./aiHelper");
+const { TEXT_GENERATION_MODELS } = require("./ai_models");
 
-const { defineSecret } = require('firebase-functions/params');
-const geminiApiKey = defineSecret('GOOGLE_GENAI_API_KEY'); 
-const openRouterApiKey = defineSecret('OPENROUTER_API_KEY');
+// Secrets
+const geminiApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
+const openRouterApiKey = defineSecret("OPENROUTER_API_KEY");
 
+// Initialize Firebase Admin
 admin.initializeApp();
 const db = admin.firestore();
 const storage = admin.storage();
+const bucket = storage.bucket("systemicshiftv2.firebasestorage.app");
 
-const bucket = storage.bucket("systemicshiftv2.firebasestorage.app"); 
-
-exports.submitStory = onRequest(
+// ✅ 1. Generate Image Function - wrapped in onRequest
+const hfApiKey = defineSecret('HF_API_TOKEN');
+const generateImageHfHandler = require('./generate_image_hf').generateImageHf;
+exports.generateImageHf = onRequest(
   { 
     region: 'us-central1',
-    secrets: [geminiApiKey, openRouterApiKey],
-    timeoutSeconds: 300, 
-    memory: '1GB',
+    secrets: [hfApiKey],
+    timeoutSeconds: 540,
+    memory: '1GiB',
+    cpu: 1
   },
+  generateImageHfHandler
+);
+
+// ✅ 2. Story Submission Function
+exports.submitStory = onRequest(
+  { region: "us-central1", secrets: [geminiApiKey, openRouterApiKey], timeoutSeconds: 300, memory: "1GiB" },
   (req, res) => {
     cors(req, res, async () => {
-      if (req.method !== "POST") {
-        return res.status(405).send("Method Not Allowed");
-      }
+      if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+
       const busboy = Busboy({ headers: req.headers });
       const tmpdir = os.tmpdir();
       let formData = {};
       let fileWrites = [];
 
       busboy.on("field", (fieldname, val) => {
-         if (fieldname.endsWith("[]")) {
-               const realName = fieldname.replace("[]", "");
-               if (formData[realName]) { formData[realName].push(val); }
-               else { formData[realName] = [val]; }
-            } else if (fieldname === 'acknowledgement') {
-               formData[fieldname] = (val === 'true');
-            } else {
-               formData[fieldname] = val;
-            }
+        if (fieldname.endsWith("[]")) {
+          const realName = fieldname.replace("[]", "");
+          if (formData[realName]) formData[realName].push(val);
+          else formData[realName] = [val];
+        } else if (fieldname === "acknowledgement") {
+          formData[fieldname] = val === "true";
+        } else {
+          formData[fieldname] = val;
+        }
       });
 
       busboy.on("file", (fieldname, file, filenameDetails) => {
-          const { filename, encoding, mimeType } = filenameDetails;
-          const filepath = path.join(tmpdir, filename);
-          const writeStream = fs.createWriteStream(filepath);
-          file.pipe(writeStream);
-          const promise = new Promise((resolve, reject) => {
-               file.on("end", () => { writeStream.end(); });
-               writeStream.on("finish", async () => {
-                const uniqueFilename = `${Date.now()}_${filename}`;
-                const destination = fieldname === 'writeUp' ? `writeUps/${uniqueFilename}` : `visuals/${uniqueFilename}`;
-                try {
-                  const [uploadedFile] = await bucket.upload(filepath, {
-                    destination: destination,
-                    metadata: { contentType: mimeType },
-                  });
-                  if (fs.existsSync(filepath)) { fs.unlinkSync(filepath); } 
-                  await uploadedFile.makePublic();
-                  const publicUrl = uploadedFile.publicUrl();
-                  resolve({ fieldname, url: publicUrl }); 
-                } catch (error) {
-                   console.error("Storage Upload Error:", error);
-                   if (fs.existsSync(filepath)) { fs.unlinkSync(filepath); }
-                   reject(error);
-                }
-              });
-               writeStream.on("error", reject);
+        const { filename, mimeType } = filenameDetails;
+        const filepath = path.join(tmpdir, filename);
+        const writeStream = fs.createWriteStream(filepath);
+        file.pipe(writeStream);
+        const promise = new Promise((resolve, reject) => {
+          file.on("end", () => writeStream.end());
+          writeStream.on("finish", async () => {
+            const uniqueFilename = `${Date.now()}_${filename}`;
+            const destination = fieldname === "writeUp" ? `writeUps/${uniqueFilename}` : `visuals/${uniqueFilename}`;
+            try {
+              const [uploadedFile] = await bucket.upload(filepath, { destination, metadata: { contentType: mimeType } });
+              if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+              await uploadedFile.makePublic();
+              resolve({ fieldname, url: uploadedFile.publicUrl() });
+            } catch (error) {
+              console.error("Storage Upload Error:", error);
+              if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+              reject(error);
+            }
           });
-          fileWrites.push(promise);
+          writeStream.on("error", reject);
+        });
+        fileWrites.push(promise);
       });
 
       busboy.on("finish", async () => {
         try {
           const fileResults = await Promise.all(fileWrites);
-          let writeUpURL = '';
+          let writeUpURL = "";
           let visualURLs = [];
           fileResults.forEach(result => {
-            if (result.fieldname === 'writeUp') writeUpURL = result.url;
-            else if (result.fieldname === 'visuals') visualURLs.push(result.url);
+            if (result.fieldname === "writeUp") writeUpURL = result.url;
+            else if (result.fieldname === "visuals") visualURLs.push(result.url);
           });
 
           const submissionData = {
             ...formData,
-            writeUpURL: writeUpURL,
-            visualURLs: visualURLs,
+            writeUpURL,
+            visualURLs,
             submittedAt: admin.firestore.FieldValue.serverTimestamp(),
           };
-          ['keyShifts', 'focusAreas', 'desiredMindset'].forEach(field => {
-              if (!submissionData[field]) submissionData[field] = [];
+
+          ["keyShifts", "focusAreas", "desiredMindset"].forEach(field => {
+            if (!submissionData[field]) submissionData[field] = [];
           });
-           if (submissionData.alignsWithShifts === 'null') {
-               submissionData.alignsWithShifts = null;
-           }
+
+          if (submissionData.alignsWithShifts === "null") submissionData.alignsWithShifts = null;
+
           await db.collection("stories").add(submissionData);
           res.status(200).send({ message: "Story submitted successfully!" });
         } catch (err) {
@@ -114,19 +120,17 @@ exports.submitStory = onRequest(
         }
       });
 
-       if (req.rawBody) {
-            busboy.end(req.rawBody);
-       } else {
-            req.pipe(busboy);
-       }
+      if (req.rawBody) busboy.end(req.rawBody);
+      else req.pipe(busboy);
     });
-});
+  }
+);
 
 exports.analyzeStorySubmission = onDocumentCreated(
     { 
         document: 'stories/{storyId}',
         region: 'us-central1', 
-        secrets: [geminiApiKey, openRouterApiKey],
+        secrets: [geminiApiKey, openRouterApiKey], // <-- Removed huggingFaceApiKey
         timeoutSeconds: 540, 
         memory: '1GiB',
     },
@@ -138,11 +142,13 @@ exports.analyzeStorySubmission = onDocumentCreated(
     }
     const storyData = snap.data();
     const storyId = event.params.storyId;
-    console.log(`Analyzing story ID: ${storyId}`);
+    console.log(`[analyzeStorySubmission] ===== STARTING ANALYSIS FOR STORY ID: ${storyId} =====`);
+    console.log(`[analyzeStorySubmission] Story data keys:`, Object.keys(storyData));
 
     const keys = {
       gemini: geminiApiKey.value(),
-      openrouter: openRouterApiKey.value()
+      openrouter: openRouterApiKey.value(),
+      // <-- No longer need the Hugging Face key here
     };
     
     const extractedFileText = await extractTextFromFiles(storyData);
@@ -166,29 +172,76 @@ exports.analyzeStorySubmission = onDocumentCreated(
     let aiInfographicConcept = { error: "AI infographic concept generation failed." };
     let aiGeneratedImageUrl = "Image generation skipped/failed.";
 
+    // --- Use Python Cloud Function for image generation (uses diffusers library) ---
+    // Python Cloud Function using diffusers - v2 functions use .run.app domain
+    const HF_WORKER_URL = process.env.GENERATE_IMAGE_URL || 'https://generateimagehfpython-el2jwxb5bq-uc.a.run.app';
+
     try {
-      const writeupRaw = await generateWithFallback(writeupPrompt, keys, TEXT_GENERATION_MODELS, false);
+      const writeupRaw = await generateWithFallback(writeupPrompt, keys, false);
       aiWriteup = writeupRaw; 
 
-      const infographicRaw = await generateWithFallback(infographicPrompt, keys, TEXT_GENERATION_MODELS, true);
+      const infographicRaw = await generateWithFallback(infographicPrompt, keys, true);
+      
+      // Try to parse JSON, handling markdown code blocks
+      let cleanedJson = infographicRaw.trim();
+      // Remove markdown code blocks if present
+      if (cleanedJson.startsWith('```')) {
+        const lines = cleanedJson.split('\n');
+        const jsonStart = lines.findIndex(line => line.includes('{'));
+        let jsonEnd = -1;
+        for (let i = lines.length - 1; i >= 0; i--) {
+          if (lines[i].includes('}')) {
+            jsonEnd = i;
+            break;
+          }
+        }
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          cleanedJson = lines.slice(jsonStart, jsonEnd + 1).join('\n');
+        }
+      }
       
       try {
-        aiInfographicConcept = JSON.parse(infographicRaw);
+        aiInfographicConcept = JSON.parse(cleanedJson);
       } catch (parseError) {
          console.error("Failed to parse AI JSON response for infographic:", parseError);
-         aiInfographicConcept = { error: 'Concept failed to parse.', rawResponse: infographicRaw.substring(0, 500) };
+         console.error("Raw response:", infographicRaw.substring(0, 1000));
+         
+         // Try to extract title from raw response as fallback
+         const titleMatch = infographicRaw.match(/"title"\s*:\s*"([^"]+)"/i) || 
+                           infographicRaw.match(/title["\s:]+([^",}\n]+)/i);
+         const extractedTitle = titleMatch ? titleMatch[1].trim() : null;
+         
+         aiInfographicConcept = { 
+           error: 'Concept failed to parse.', 
+           rawResponse: infographicRaw.substring(0, 500),
+           title: extractedTitle || storyData.storyTitle || storyData.nonShiftTitle || 'Systemic Shift Story'
+         };
       }
-
+      
+      // --- Image generation is handled by local service ---
+      // The local_image_generator.py service monitors Firestore and generates images locally
+      // So we just mark that the concept is ready for image generation
+      console.log(`[analyzeStorySubmission] aiInfographicConcept type: ${typeof aiInfographicConcept}, has title: ${!!aiInfographicConcept?.title}, title value: ${aiInfographicConcept?.title}`);
+      
       if (typeof aiInfographicConcept === 'object' && aiInfographicConcept.title) {
-        console.log("Attempting to generate image from structured concept...");
-        aiGeneratedImageUrl = await generateImage(aiInfographicConcept, keys);
+          console.log("[analyzeStorySubmission] Infographic concept ready. Local image generator service will process it.");
+          // Don't set aiGeneratedImageUrl here - let the local service handle it
+          // This allows the local service to generate images asynchronously
+          aiGeneratedImageUrl = "Pending local generation";
       } else {
-        aiGeneratedImageUrl = "Image generation skipped: Concept failed to parse.";
+          const reason = !aiInfographicConcept ? 'aiInfographicConcept is null/undefined' :
+                        typeof aiInfographicConcept !== 'object' ? `aiInfographicConcept is not an object (type: ${typeof aiInfographicConcept})` :
+                        !aiInfographicConcept.title ? 'aiInfographicConcept has no title property' :
+                        'Unknown reason';
+          console.log(`[analyzeStorySubmission] Image generation skipped. Reason: ${reason}`);
+          console.log(`[analyzeStorySubmission] aiInfographicConcept value:`, JSON.stringify(aiInfographicConcept).substring(0, 500));
+          aiGeneratedImageUrl = `Image generation skipped: ${reason}`;
       }
-
     } catch (error) {
       console.error("Critical Error in AI Pipeline:", error);
-      if (aiGeneratedImageUrl.includes('failed')) aiGeneratedImageUrl = `Critical Image Error: ${error.message}`;
+      console.error("Error stack:", error.stack);
+      // Always set error message, don't check if it includes 'failed'
+      aiGeneratedImageUrl = 'Critical Image Error: ' + error.message;
     }
 
     try {
@@ -205,6 +258,122 @@ exports.analyzeStorySubmission = onDocumentCreated(
     }
 });
 
+// Manual trigger function to test image generation for existing documents
+exports.triggerImageGeneration = onRequest(
+  {
+    region: 'us-central1',
+    secrets: [geminiApiKey, openRouterApiKey],
+    timeoutSeconds: 600,
+    memory: '1GiB',
+  },
+  async (req, res) => {
+    cors(req, res, async () => {
+      if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method Not Allowed. Use POST." });
+      }
+
+      try {
+        const { storyId } = req.body;
+        if (!storyId) {
+          return res.status(400).json({ error: "storyId is required in request body" });
+        }
+
+        console.log(`[triggerImageGeneration] Manual trigger for storyId: ${storyId}`);
+
+        // Get the document from Firestore
+        const docRef = db.collection('stories').doc(storyId);
+        const docSnap = await docRef.get();
+
+        if (!docSnap.exists) {
+          return res.status(404).json({ error: `Document ${storyId} not found` });
+        }
+
+        const storyData = docSnap.data();
+        console.log(`[triggerImageGeneration] Found document with title: ${storyData.nonShiftTitle || storyData.storyTitle || 'N/A'}`);
+
+        // Check if analysis already exists
+        if (storyData.aiGeneratedWriteup) {
+          console.log(`[triggerImageGeneration] Document already has AI analysis. Regenerating image only...`);
+        }
+
+        // Extract title for image generation
+        const title = storyData.nonShiftTitle || storyData.storyTitle || 'Systemic Shift Story';
+        
+        // Get or create infographic concept
+        let aiInfographicConcept = storyData.aiInfographicConcept;
+        if (!aiInfographicConcept || !aiInfographicConcept.title) {
+          // Generate concept if it doesn't exist
+          console.log(`[triggerImageGeneration] Generating infographic concept...`);
+          const keys = {
+            gemini: geminiApiKey.value(),
+            openrouter: openRouterApiKey.value(),
+          };
+
+          const conceptPrompt = `Generate a concise JSON infographic concept for this story:
+Title: ${title}
+Description: ${(storyData.nonShiftDescription || storyData.storyDescription || '').substring(0, 500)}
+
+Return JSON with: {"title": "...", "keyMetrics": [{"label": "...", "value": "..."}]}`;
+
+          const conceptRaw = await generateWithFallback(conceptPrompt, keys, false);
+          
+          try {
+            let cleanedJson = conceptRaw.trim();
+            if (cleanedJson.startsWith('```')) {
+              const lines = cleanedJson.split('\n');
+              const jsonStart = lines.findIndex(line => line.includes('{'));
+              let jsonEnd = -1;
+              for (let i = lines.length - 1; i >= 0; i--) {
+                if (lines[i].includes('}')) {
+                  jsonEnd = i;
+                  break;
+                }
+              }
+              if (jsonStart !== -1 && jsonEnd !== -1) {
+                cleanedJson = lines.slice(jsonStart, jsonEnd + 1).join('\n');
+              }
+            }
+            aiInfographicConcept = JSON.parse(cleanedJson);
+          } catch (parseError) {
+            aiInfographicConcept = {
+              error: 'Concept failed to parse.',
+              title: title
+            };
+          }
+        }
+
+        // Image generation is handled by local Python service (local_image_generator.py)
+        // Just update Firestore with the concept - the local service will detect it and generate the image
+        console.log(`[triggerImageGeneration] Updating Firestore with concept. Local service will generate image.`);
+        
+        // Update document with concept - local service will handle image generation
+        await docRef.update({
+          aiInfographicConcept: aiInfographicConcept,
+          aiGeneratedImageUrl: "Pending local generation",
+          analysisTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`[triggerImageGeneration] Successfully updated document ${storyId} with concept. Local service will generate image.`);
+
+        return res.status(200).json({
+          success: true,
+          storyId: storyId,
+          message: 'Concept generated and document updated. Local image generator service will process the image generation.',
+          aiInfographicConcept: aiInfographicConcept
+        });
+
+      } catch (error) {
+        console.error("[triggerImageGeneration] Error:", error);
+        return res.status(500).json({
+          error: "Failed to trigger image generation",
+          message: error.message,
+          stack: error.stack
+        });
+      }
+    });
+  }
+);
+
 exports.askChatbot = onRequest(
   { 
     region: 'us-central1',
@@ -214,7 +383,7 @@ exports.askChatbot = onRequest(
   (req, res) => {
   cors(req, res, async () => {
     if (req.method !== "POST") {
-      return res.status(405).send({ error: "Method Not Allowed" });
+      return res.status(400).send({ error: "Method Not Allowed" });
     }
 
     try {
@@ -230,9 +399,6 @@ exports.askChatbot = onRequest(
         gemini: geminiApiKey.value(),
         openrouter: openRouterApiKey.value()
       };
-
-      // Use dynamic import for node-fetch
-      const fetch = (await import('node-fetch')).default;
 
       const systemPrompt = `You are a helpful AI assistant for the PETRONAS Upstream "Systemic Shifts" microsite named "Nexus Assistant".
       Answer questions concisely based on the context below and your general knowledge.
@@ -250,7 +416,7 @@ exports.askChatbot = onRequest(
 
       const fullPrompt = `${systemPrompt}\n\nUSER QUESTION: ${message}\n\nASSISTANT RESPONSE:`;
       
-      const aiResponseRaw = await generateWithFallback(fullPrompt, keys, TEXT_GENERATION_MODELS, false);
+      const aiResponseRaw = await generateWithFallback(fullPrompt, keys, false);
 
       let mainReply = aiResponseRaw;
       let suggestions = [];
