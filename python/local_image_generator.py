@@ -390,56 +390,65 @@ def monitor_firestore():
             logger.info(f"[Monitor Cycle] Checking for stories needing image generation at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
             logger.info(f"[Monitor Cycle] Script started at: {script_start_time.strftime('%Y-%m-%d %H:%M:%S UTC')}")
             
-            # Query for stories submitted AFTER script start time
-            # Firestore accepts Python datetime objects directly - no conversion needed
-            # Simplified query: only filter by submittedAt to avoid composite index requirement
-            # We'll filter for aiInfographicConcept in Python code instead
-            logger.info(f"[Monitor Cycle] Querying for stories submitted after {script_start_time.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+            # Query for stories needing image generation in two ways:
+            # 1. Stories submitted AFTER script start (new submissions)
+            # 2. Recent stories with concepts that need images (regardless of submission time)
+            logger.info(f"[Monitor Cycle] Querying for stories needing image generation...")
             
             try:
-                # Query: stories submitted after script start, limit to 20 (we'll filter in Python)
-                # Note: Firestore will automatically convert Python datetime to Firestore timestamp
-                # Using only submittedAt filter avoids composite index requirement
-                query = stories_ref.where("submittedAt", ">=", script_start_time)\
-                                  .order_by("submittedAt")\
-                                  .limit(20)
-                docs = list(query.stream())  # Convert to list to avoid streaming timeout
-                logger.info(f"[Monitor Cycle] Found {len(docs)} document(s) submitted after script start")
+                all_docs_dict = {}  # Use dict to deduplicate by document ID
                 
-                # Diagnostic: If no docs found, check recent documents to see what's happening
-                if len(docs) == 0:
-                    logger.info("[Monitor Cycle] No documents found. Running diagnostic query...")
-                    try:
-                        # Get the 5 most recent documents (regardless of time) to see their status
-                        recent_query = stories_ref.order_by("submittedAt", direction=firestore.Query.DESCENDING).limit(5)
-                        recent_docs = list(recent_query.stream())
-                        logger.info(f"[Monitor Cycle] Diagnostic: Found {len(recent_docs)} most recent document(s):")
-                        for recent_doc in recent_docs:
-                            recent_data = recent_doc.to_dict()
-                            recent_id = recent_doc.id
-                            recent_submitted = recent_data.get("submittedAt")
-                            recent_title = recent_data.get("nonShiftTitle") or recent_data.get("storyTitle", "N/A")
-                            has_concept = bool(recent_data.get("aiInfographicConcept"))
-                            image_url = recent_data.get("aiGeneratedImageUrl", "NOT SET")
-                            
-                            # Convert Firestore timestamp to datetime for comparison
-                            if recent_submitted:
-                                submitted_dt = convert_firestore_timestamp(recent_submitted)
-                                if submitted_dt:
-                                    is_after_start = submitted_dt >= script_start_time
-                                    submitted_str = submitted_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
-                                else:
-                                    submitted_str = "CONVERSION FAILED"
-                                    is_after_start = False
-                            else:
-                                submitted_str = "NO TIMESTAMP"
-                                is_after_start = False
-                            
-                            logger.info(f"[Monitor Cycle]   - Doc {recent_id}: title='{recent_title[:40]}'")
-                            logger.info(f"[Monitor Cycle]     submitted={submitted_str}, after_start={is_after_start}")
-                            logger.info(f"[Monitor Cycle]     hasConcept={has_concept}, imageUrl='{str(image_url)[:60]}'")
-                    except Exception as diag_error:
-                        logger.debug(f"[Monitor Cycle] Diagnostic query error: {diag_error}")
+                # Query 1: Stories submitted after script start (for new submissions)
+                try:
+                    query_new = stories_ref.where("submittedAt", ">=", script_start_time)\
+                                          .order_by("submittedAt")\
+                                          .limit(20)
+                    docs_new = list(query_new.stream())
+                    logger.info(f"[Monitor Cycle] Found {len(docs_new)} document(s) submitted after script start")
+                    for doc in docs_new:
+                        all_docs_dict[doc.id] = doc
+                except Exception as e:
+                    logger.warning(f"Error querying new submissions: {e}")
+                
+                # Query 2: Recent documents (last 50) - we'll filter for those with concepts needing images
+                # This catches documents submitted before script start that have concepts
+                try:
+                    query_recent = stories_ref.order_by("submittedAt", direction=firestore.Query.DESCENDING).limit(50)
+                    docs_recent = list(query_recent.stream())
+                    logger.info(f"[Monitor Cycle] Checking {len(docs_recent)} most recent documents for concepts needing images")
+                    
+                    for doc in docs_recent:
+                        doc_data = doc.to_dict()
+                        has_concept = bool(doc_data.get("aiInfographicConcept"))
+                        image_url = doc_data.get("aiGeneratedImageUrl", "NOT SET")
+                        
+                        # Check if this document needs image generation
+                        # (has concept but no valid image URL)
+                        is_valid_url = isinstance(image_url, str) and (image_url.startswith("http://") or image_url.startswith("https://"))
+                        has_error = isinstance(image_url, str) and ("Error:" in image_url or "failed" in image_url.lower())
+                        
+                        if has_concept and not is_valid_url and not has_error:
+                            # This document has a concept and needs an image
+                            if doc.id not in all_docs_dict:
+                                all_docs_dict[doc.id] = doc
+                                logger.info(f"[Monitor Cycle] Found document with concept needing image (submitted before script start): {doc.id}")
+                except Exception as e:
+                    logger.warning(f"Error querying recent documents: {e}")
+                
+                # Convert dict values to list
+                docs = list(all_docs_dict.values())
+                logger.info(f"[Monitor Cycle] Total documents to check: {len(docs)} (after deduplication)")
+                
+                # Diagnostic logging for first few documents
+                if len(docs) > 0:
+                    logger.info(f"[Monitor Cycle] Sample of documents to process:")
+                    for doc in docs[:3]:  # Show first 3
+                        doc_data = doc.to_dict()
+                        doc_id = doc.id
+                        title = doc_data.get("nonShiftTitle") or doc_data.get("storyTitle", "N/A")
+                        has_concept = bool(doc_data.get("aiInfographicConcept"))
+                        image_url = doc_data.get("aiGeneratedImageUrl", "NOT SET")
+                        logger.info(f"[Monitor Cycle]   - {doc_id}: '{title[:40]}', hasConcept={has_concept}, imageUrl='{str(image_url)[:50]}'")
                 
             except Exception as e:
                 logger.warning(f"Query timeout or error, retrying: {e}")
@@ -483,11 +492,11 @@ def monitor_firestore():
                 
                 # Check if concept exists
                 if not has_concept:
-                    logger.warning(f"Story {doc_id} submitted after script start but no concept yet, skipping (waiting for analyzeStorySubmission)")
+                    logger.debug(f"Story {doc_id} has no concept yet, skipping (waiting for analyzeStorySubmission)")
                     continue
                 
-                # Process this story (submitted after script start, has concept, no valid image yet)
-                logger.info(f"Found NEW story needing image (submitted after script start): {doc_id}")
+                # Process this story (has concept, no valid image yet)
+                logger.info(f"Found story needing image generation: {doc_id}")
                 process_story(doc_id, doc_data)
                 processed_count += 1
             
