@@ -51,7 +51,7 @@ export default function NexusHubLayout({ children }) {
               </SideNavLink>
               <SideNavLink href="/nexushub/upg">
                 <FaImages />
-                UpG (WIP)
+                UpG
               </SideNavLink>
               <SideNavLink href="/nexushub/dropbox">
                 <FaThList />
