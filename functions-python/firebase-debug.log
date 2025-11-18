@@ -1,0 +1,67 @@
+[debug] [2025-11-17T07:21:25.363Z] ----------------------------------------------------------------------
+[debug] [2025-11-17T07:21:25.366Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions:python:generateImageHfPython --project systemicshiftv2
+[debug] [2025-11-17T07:21:25.366Z] CLI Version:   14.24.2
+[debug] [2025-11-17T07:21:25.366Z] Platform:      win32
+[debug] [2025-11-17T07:21:25.366Z] Node Version:  v24.11.0
+[debug] [2025-11-17T07:21:25.366Z] Time:          Mon Nov 17 2025 15:21:25 GMT+0800 (Malaysia Time)
+[debug] [2025-11-17T07:21:25.366Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-17T07:21:25.566Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-17T07:21:25.566Z] > authorizing via signed-in user (fakhrulazim.am@gmail.com)
+[debug] [2025-11-17T07:21:25.566Z] [iam] checking project systemicshiftv2 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2025-11-17T07:21:25.567Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:25.567Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:25.568Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions [none]
+[debug] [2025-11-17T07:21:25.568Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions x-goog-quota-user=projects/systemicshiftv2
+[debug] [2025-11-17T07:21:25.568Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-11-17T07:21:26.878Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions 200
+[debug] [2025-11-17T07:21:26.878Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-11-17T07:21:26.879Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:26.879Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:26.879Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/systemicshiftv2/serviceAccounts/systemicshiftv2@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-11-17T07:21:26.879Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/systemicshiftv2/serviceAccounts/systemicshiftv2@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-11-17T07:21:28.373Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/systemicshiftv2/serviceAccounts/systemicshiftv2@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2025-11-17T07:21:28.374Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/systemicshiftv2/serviceAccounts/systemicshiftv2@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'systemicshiftv2'...
+[info] 
+[info] i  deploying functions 
+[debug] [2025-11-17T07:21:28.376Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:28.376Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:28.376Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2 [none]
+[debug] [2025-11-17T07:21:28.691Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2 200
+[debug] [2025-11-17T07:21:28.691Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2 {"projectNumber":"436251067627","projectId":"systemicshiftv2","lifecycleState":"ACTIVE","name":"SystemicShiftV2","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-10-29T06:10:06.970173Z"}
+[info] i  functions: preparing codebase python for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2025-11-17T07:21:28.693Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:28.693Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:28.693Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/systemicshiftv2/adminSdkConfig [none]
+[debug] [2025-11-17T07:21:30.291Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/systemicshiftv2/adminSdkConfig 200
+[debug] [2025-11-17T07:21:30.291Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/systemicshiftv2/adminSdkConfig {"projectId":"systemicshiftv2","storageBucket":"systemicshiftv2.firebasestorage.app"}
+[debug] [2025-11-17T07:21:30.291Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:30.291Z] Checked if tokens are valid: true, expires at: 1763366084697
+[debug] [2025-11-17T07:21:30.292Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/systemicshiftv2/configs [none]
+[debug] [2025-11-17T07:21:30.664Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/systemicshiftv2/configs 200
+[debug] [2025-11-17T07:21:30.664Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/systemicshiftv2/configs {}
+[debug] [2025-11-17T07:21:30.665Z] Customer code is not Node
+[debug] [2025-11-17T07:21:30.665Z] Validating python source
+[debug] [2025-11-17T07:21:30.665Z] Building python source
+[info] i  functions: Loading and analyzing source code for codebase python to determine what to deploy 
+[debug] [2025-11-17T07:21:30.666Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-17T07:21:30.675Z] Running command with virtualenv: command="C:\Users\User\Documents\Coding\SIP\Systemic Shifts Microsite\systemicshiftsver2\functions-python\venv\Scripts\activate.bat", args=["","&&","python.exe","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2025-11-17T07:21:30.927Z] stderr: Traceback (most recent call last):
+
+[debug] [2025-11-17T07:21:30.930Z] stderr:   File "<string>", line 1, in <module>
+    import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'firebase_functions'
+
+[debug] [2025-11-17T07:21:31.310Z] Error: spawn "C:\Users\User\Documents\Coding\SIP\Systemic Shifts Microsite\systemicshiftsver2\functions-python\venv\Scripts\activate.bat" ENOENT
+    at notFoundError (C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:6:26)
+    at verifyENOENT (C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:40:16)
+    at cp.emit (C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:27:25)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12)
+[error] 
+[error] Error: An unexpected error has occurred.

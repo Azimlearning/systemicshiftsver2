@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# secrets and credentials
+python/firebase-key.json
+python/SETUP_AUTH.md
+test-hf-api-direct.ps1
+*.json.key
+*firebase-key*
