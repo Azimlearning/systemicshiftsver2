@@ -517,3 +517,15 @@ exports.analyzeImage = onRequest(
     });
   }
 );
+
+// ✅ 7. Generate Podcast Function
+const { createGeneratePodcastHandler } = require('./generatePodcast');
+exports.generatePodcast = onRequest(
+  {
+    region: 'us-central1',
+    secrets: [geminiApiKey, openRouterApiKey],
+    timeoutSeconds: 300,
+    memory: '1GiB',
+  },
+  createGeneratePodcastHandler(geminiApiKey, openRouterApiKey)
+);
