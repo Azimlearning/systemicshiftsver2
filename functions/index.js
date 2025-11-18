@@ -12,7 +12,7 @@ const path = require("path");
 const os = require("os");
 const fs = require("fs");
 
-const { generateWithFallback, extractTextFromFiles } = require("./aiHelper");
+const { generateWithFallback, extractTextFromFiles, analyzeImageWithAI } = require("./aiHelper");
 const { TEXT_GENERATION_MODELS } = require("./ai_models");
 const { WriteupRetriever } = require("./rag_writeup_retriever");
 
@@ -461,3 +461,59 @@ exports.askChatbot = onRequest(
     }
   });
 });
+
+// ✅ 5. Analyze Image Function - AI auto-tagging and categorization
+exports.analyzeImage = onRequest(
+  {
+    region: 'us-central1',
+    secrets: [geminiApiKey, openRouterApiKey],
+    timeoutSeconds: 120,
+    memory: '1GiB',
+  },
+  (req, res) => {
+    console.log(`[analyzeImage] Function called - Method: ${req.method}, Headers:`, JSON.stringify(req.headers));
+    cors(req, res, async () => {
+      console.log(`[analyzeImage] Inside CORS handler - Method: ${req.method}`);
+      if (req.method !== "POST") {
+        return res.status(405).send({ error: "Method Not Allowed" });
+      }
+
+      try {
+        console.log(`[analyzeImage] Request body:`, JSON.stringify(req.body));
+        const { imageUrl } = req.body;
+
+        if (!imageUrl || typeof imageUrl !== 'string') {
+          return res.status(400).send({ error: "imageUrl (string) is required." });
+        }
+
+        console.log(`[analyzeImage] Analyzing image: ${imageUrl.substring(0, 100)}...`);
+
+        const keys = {
+          gemini: geminiApiKey.value(),
+          openrouter: openRouterApiKey.value()
+        };
+
+        const analysisResult = await analyzeImageWithAI(imageUrl, keys);
+
+        console.log(`[analyzeImage] Analysis successful:`, {
+          category: analysisResult.category,
+          tagsCount: analysisResult.tags.length
+        });
+
+        res.status(200).send({
+          success: true,
+          tags: analysisResult.tags,
+          category: analysisResult.category,
+          description: analysisResult.description
+        });
+
+      } catch (error) {
+        console.error("[analyzeImage] Error:", error);
+        res.status(500).send({
+          error: "Failed to analyze image",
+          message: error.message
+        });
+      }
+    });
+  }
+);

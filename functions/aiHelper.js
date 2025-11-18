@@ -204,8 +204,131 @@ async function extractTextFromFiles(storyData) {
     }
 }
 
+/**
+ * Analyzes an image using OpenRouter with Gemini Vision model to generate tags and suggest category.
+ * @param {string} imageUrl - Public URL of the image to analyze
+ * @param {object} keys - Object containing API keys { gemini, openrouter }
+ * @returns {Promise<object>} Object with tags array, category string, and optional description
+ */
+async function analyzeImageWithAI(imageUrl, keys) {
+  const fetch = (await import('node-fetch')).default;
+  
+  const prompt = `Analyze this image from a PETRONAS Upstream gallery and provide:
+1. 5-10 relevant tags (comma-separated keywords that describe the image content, people, activities, equipment, locations, etc.)
+2. Best category from this exact list: Stock Images, Events, Team Photos, Infographics, Operations, Facilities
+3. A brief description (1-2 sentences)
+
+Return your response in JSON format only:
+{
+  "tags": ["tag1", "tag2", "tag3"],
+  "category": "Events",
+  "description": "Brief description here"
+}
+
+Focus on identifying:
+- What type of image it is (photo, graphic, infographic, etc.)
+- Main subjects (people, equipment, facilities, etc.)
+- Context (events, operations, team activities, etc.)
+- Visual style (corporate, casual, technical, etc.)`;
+
+  // Use OpenRouter with google/gemini-2.5-flash-image-preview as primary method
+  // This model supports image URLs directly via OpenRouter API
+  try {
+    console.log('[analyzeImageWithAI] Using OpenRouter with google/gemini-2.5-flash-image-preview');
+    
+    const headers = {
+      'Authorization': `Bearer ${keys.openrouter}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': `https://console.firebase.google.com/project/${process.env.GCP_PROJECT || 'systemicshiftv2'}`,
+      'X-Title': 'Systemic Shift AI Image Analysis',
+    };
+
+    // OpenRouter supports image URLs directly in the message content
+    const body = {
+      model: 'google/gemini-2.5-flash-image-preview',
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: imageUrl } }
+          ]
+        }
+      ],
+      response_format: { type: 'json_object' }
+    };
+
+    const response = await fetch(OPENROUTER_CHAT_URL, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`OpenRouter error (${response.status}): ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('Invalid response format from OpenRouter');
+    }
+    
+    const resultText = data.choices[0].message.content;
+    
+    // Parse JSON from response
+    let jsonText = resultText.trim();
+    // Remove markdown code blocks if present
+    jsonText = jsonText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    const analysisResult = JSON.parse(jsonText);
+    
+    // Validate and normalize the response
+    if (!analysisResult.tags || !Array.isArray(analysisResult.tags)) {
+      throw new Error('Invalid response format: tags missing or not an array');
+    }
+    
+    if (!analysisResult.category) {
+      throw new Error('Invalid response format: category missing');
+    }
+    
+    // Ensure category is from the allowed list
+    const allowedCategories = ['Stock Images', 'Events', 'Team Photos', 'Infographics', 'Operations', 'Facilities'];
+    if (!allowedCategories.includes(analysisResult.category)) {
+      // Try to match closest category
+      const categoryLower = analysisResult.category.toLowerCase();
+      if (categoryLower.includes('event') || categoryLower.includes('meeting') || categoryLower.includes('gathering')) {
+        analysisResult.category = 'Events';
+      } else if (categoryLower.includes('team') || categoryLower.includes('people') || categoryLower.includes('staff')) {
+        analysisResult.category = 'Team Photos';
+      } else if (categoryLower.includes('infographic') || categoryLower.includes('graphic') || categoryLower.includes('chart')) {
+        analysisResult.category = 'Infographics';
+      } else if (categoryLower.includes('operation') || categoryLower.includes('field') || categoryLower.includes('production')) {
+        analysisResult.category = 'Operations';
+      } else if (categoryLower.includes('facility') || categoryLower.includes('plant') || categoryLower.includes('infrastructure')) {
+        analysisResult.category = 'Facilities';
+      } else {
+        analysisResult.category = 'Stock Images'; // Default fallback
+      }
+    }
+    
+    console.log(`[analyzeImageWithAI] Successfully analyzed image with google/gemini-2.5-flash-image-preview`);
+    return {
+      tags: analysisResult.tags.slice(0, 10), // Limit to 10 tags
+      category: analysisResult.category,
+      description: analysisResult.description || ''
+    };
+    
+  } catch (error) {
+    console.error('[analyzeImageWithAI] Error analyzing image:', error);
+    throw new Error(`Failed to analyze image: ${error.message}`);
+  }
+}
+
 module.exports = {
   generateWithFallback,
   extractTextFromFiles,
-  generateImage // Export the new image function
+  generateImage,
+  analyzeImageWithAI // Export the new image analysis function
 };

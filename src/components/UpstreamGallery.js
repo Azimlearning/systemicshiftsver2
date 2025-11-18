@@ -29,6 +29,8 @@ export default function UpstreamGallery() {
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [entryMode, setEntryMode] = useState(null); // 'manual' or 'auto' or null
+  const [analyzing, setAnalyzing] = useState(false);
   const [uploadFormData, setUploadFormData] = useState({
     file: null,
     title: '',
@@ -222,6 +224,109 @@ export default function UpstreamGallery() {
       }
 
       setUploadFormData(prev => ({ ...prev, file }));
+      setEntryMode(null); // Reset entry mode when new file is selected
+    }
+  };
+
+  // Handle AI analysis
+  const handleAIAnalysis = async () => {
+    if (!uploadFormData.file) {
+      alert('Please select an image file first');
+      return;
+    }
+
+    setAnalyzing(true);
+    setError('');
+
+    try {
+      // First, upload image to get a public URL for analysis
+      const fileExt = uploadFormData.file.name.split('.').pop();
+      const tempFilename = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}.${fileExt}`;
+      const tempStoragePath = `upstreamGallery/temp/${tempFilename}`;
+
+      // Upload to Firebase Storage (temporary location)
+      const tempStorageRef = ref(storage, tempStoragePath);
+      await uploadBytes(tempStorageRef, uploadFormData.file);
+      const tempImageUrl = await getDownloadURL(tempStorageRef);
+
+      // Call analyzeImage Cloud Function
+      const analyzeFunctionUrl = "https://analyzeimage-el2jwxb5bq-uc.a.run.app";
+      
+      console.log('[AI Analysis] Calling function with image URL:', tempImageUrl.substring(0, 100));
+      console.log('[AI Analysis] Function URL:', analyzeFunctionUrl);
+      
+      let response;
+      try {
+        response = await fetch(analyzeFunctionUrl, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageUrl: tempImageUrl }),
+          mode: 'cors' // Explicitly set CORS mode
+        });
+        console.log('[AI Analysis] Response received, status:', response.status);
+      } catch (fetchError) {
+        console.error('[AI Analysis] Fetch error details:', {
+          message: fetchError.message,
+          name: fetchError.name,
+          stack: fetchError.stack
+        });
+        // Check if it's a network error or CORS error
+        if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
+          throw new Error(`Network error: Unable to reach the server. Please check your internet connection and ensure the function is deployed.`);
+        }
+        throw new Error(`Network error: ${fetchError.message}. Please check your internet connection and try again.`);
+      }
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to analyze image';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (jsonError) {
+          const textError = await response.text().catch(() => '');
+          errorMessage = textError || `Server returned status ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const analysisData = await response.json();
+
+      if (analysisData.success) {
+        // Auto-fill form with AI suggestions
+        setUploadFormData(prev => ({
+          ...prev,
+          title: prev.title || uploadFormData.file.name.replace(/\.[^/.]+$/, ''), // Use filename if no title
+          category: analysisData.category || prev.category,
+          tags: analysisData.tags ? analysisData.tags.join(', ') : prev.tags
+        }));
+        setEntryMode('auto');
+      } else {
+        throw new Error(analysisData.error || 'Analysis failed');
+      }
+
+    } catch (err) {
+      console.error("Error in AI analysis:", err);
+      setError('AI analysis failed. You can still fill in the form manually.');
+      alert('AI analysis failed: ' + err.message + '\n\nYou can still fill in the form manually.');
+      setEntryMode('manual'); // Fallback to manual mode
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  // Handle manual entry mode
+  const handleManualEntry = () => {
+    setEntryMode('manual');
+    // Reset form to defaults if needed
+    if (!uploadFormData.title) {
+      setUploadFormData(prev => ({
+        ...prev,
+        title: prev.file ? prev.file.name.replace(/\.[^/.]+$/, '') : '',
+        category: 'Stock Images',
+        tags: ''
+      }));
     }
   };
 
@@ -297,6 +402,7 @@ export default function UpstreamGallery() {
         category: 'Stock Images',
         tags: ''
       });
+      setEntryMode(null);
       setShowUploadForm(false);
       
       // Reset file input
@@ -430,6 +536,45 @@ export default function UpstreamGallery() {
               />
             </div>
 
+            {/* Manual/Auto Toggle - Show after file selection */}
+            {uploadFormData.file && entryMode === null && (
+              <div className="p-4 bg-white rounded-lg border border-gray-300">
+                <p className="text-sm font-medium text-gray-700 mb-3">Choose how to fill in the details:</p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleManualEntry}
+                    className="flex-1 bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-lg transition-colors hover:bg-gray-300 flex items-center justify-center gap-2"
+                  >
+                    <span>📝 Manual Entry</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAIAnalysis}
+                    disabled={analyzing}
+                    className="flex-1 bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {analyzing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Analyzing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🤖 Auto (AI)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                {analyzing && (
+                  <p className="text-xs text-gray-500 mt-2 text-center">AI is analyzing your image to suggest tags and category...</p>
+                )}
+              </div>
+            )}
+
+            {/* Show form fields when entry mode is selected */}
+            {entryMode !== null && (
+              <>
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
                 Title *
@@ -496,11 +641,13 @@ export default function UpstreamGallery() {
 
             <button
               type="submit"
-              disabled={uploading}
+              disabled={uploading || entryMode === null}
               className="bg-teal-600 text-white font-semibold py-2 px-6 rounded transition-colors hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {uploading ? 'Uploading...' : 'Upload Image'}
             </button>
+              </>
+            )}
           </form>
         </div>
       )}
