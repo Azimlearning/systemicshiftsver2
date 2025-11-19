@@ -1,54 +1,27 @@
 // src/app/page.js
+/**
+ * Landing Page - Upstream Buzz
+ * 
+ * This is the main landing page that users see when they first visit the site.
+ * It displays the Upstream Buzz section (HeroSection component).
+ * 
+ * All Systemic Shifts content (Upstream Target, Key Shifts, etc.) has been
+ * moved to the /systemic-shifts routes with their own layout and navigation.
+ */
 
 import Header from '../components/Header';
-import Hero from '../components/Hero';
 import HeroSection from '../components/HeroSection';
-import UpstreamTarget from '../components/UpstreamTarget';
-import KeyShifts from '../components/KeyShifts';
-import MindsetBehaviour from '../components/MindsetBehaviour';
-import OurProgress from '../components/OurProgress';
 import Footer from '../components/Footer';
-import FadeInWhenVisible from '../components/animations/FadeInWhenVisible';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gray-100 font-sans flex flex-col">
       <Header />
       <main className="flex-grow relative z-10">
+        {/* Landing Page: Upstream Buzz */}
         <section id="home">
-          <Hero />
+          <HeroSection />
         </section>
-
-        <FadeInWhenVisible key="upstream-target">
-          <section id="upstream-target">
-             <HeroSection />
-          </section>
-        </FadeInWhenVisible>
-
-        <FadeInWhenVisible key="upstream-target-details">
-          <section id="upstream-target-details">
-            <UpstreamTarget />
-          </section>
-        </FadeInWhenVisible>
-
-        <FadeInWhenVisible key="key-shifts">
-          <section id="key-shifts">
-            <KeyShifts />
-          </section>
-        </FadeInWhenVisible>
-
-        <FadeInWhenVisible key="mindset-behaviour">
-          <section id="mindset-behaviour">
-            <MindsetBehaviour />
-          </section>
-        </FadeInWhenVisible>
-
-        <FadeInWhenVisible key="our-progress">
-          <section id="our-progress">
-            <OurProgress />
-          </section>
-        </FadeInWhenVisible>
-
       </main>
       <Footer />
     </div>
