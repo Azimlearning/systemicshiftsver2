@@ -15,6 +15,7 @@ const fs = require("fs");
 const { generateWithFallback, extractTextFromFiles, analyzeImageWithAI } = require("./aiHelper");
 const { TEXT_GENERATION_MODELS } = require("./ai_models");
 const { WriteupRetriever } = require("./rag_writeup_retriever");
+const { ChatbotRAGRetriever } = require("./chatbotRAGRetriever");
 
 // Secrets
 const geminiApiKey = defineSecret("GOOGLE_GENAI_API_KEY");
@@ -419,10 +420,47 @@ exports.askChatbot = onRequest(
         openrouter: openRouterApiKey.value()
       };
 
+      // Use RAG to retrieve relevant knowledge base documents
+      let knowledgeContext = '';
+      let citations = [];
+      let retrievedDocs = [];
+
+      try {
+        const ragRetriever = new ChatbotRAGRetriever();
+        retrievedDocs = await ragRetriever.retrieveRelevantDocuments(message, keys, 3);
+        
+        if (retrievedDocs && retrievedDocs.length > 0) {
+          knowledgeContext = ragRetriever.buildContextString(retrievedDocs, 2500);
+          citations = retrievedDocs.map(doc => ({
+            title: doc.title,
+            sourceUrl: doc.sourceUrl,
+            category: doc.category,
+            similarity: doc.similarity
+          }));
+          console.log(`[askChatbot] Retrieved ${retrievedDocs.length} relevant documents for context`);
+        } else {
+          console.log('[askChatbot] No relevant documents found, using base context only');
+        }
+      } catch (ragError) {
+        console.warn(`[askChatbot] RAG retrieval failed: ${ragError.message}. Continuing with base context.`);
+      }
+
+      // Build enhanced system prompt with knowledge base context
+      const baseContext = `Goal is PETRONAS 2.0 by 2035; Key Shifts are "Portfolio High-Grading" & "Deliver Advantaged Barrels"; Mindsets are "More Risk Tolerant", "Commercial Savvy", "Growth Mindset".`;
+      
       const systemPrompt = `You are a helpful AI assistant for the PETRONAS Upstream "Systemic Shifts" microsite named "Nexus Assistant".
       Answer questions concisely based on the context below and your general knowledge.
-      Context: Goal is PETRONAS 2.0 by 2035; Key Shifts are "Portfolio High-Grading" & "Deliver Advantaged Barrels"; Mindsets are "More Risk Tolerant", "Commercial Savvy", "Growth Mindset".
-
+      
+      Base Context: ${baseContext}
+      
+      ${knowledgeContext ? `\n${knowledgeContext}\n` : ''}
+      
+      Instructions:
+      - Use the knowledge base information above to provide accurate, detailed answers
+      - If the knowledge base contains relevant information, prioritize it over general knowledge
+      - Be specific and cite key facts when possible
+      - If you reference information from the knowledge base, mention the source naturally in your answer
+      
       After providing your answer, suggest 2-3 brief, relevant follow-up questions the user might ask next.
       Format your entire response like this:
       MAIN_ANSWER_TEXT_HERE
@@ -453,7 +491,11 @@ exports.askChatbot = onRequest(
         suggestions = suggestionLines.map(line => line.substring(1).trim().replace(/\?$/, ''));
       }
 
-      res.status(200).send({ reply: mainReply, suggestions: suggestions });
+      res.status(200).send({ 
+        reply: mainReply, 
+        suggestions: suggestions,
+        citations: citations.length > 0 ? citations : undefined
+      });
 
     } catch (error) {
       console.error("Error in askChatbot function:", error);
@@ -539,3 +581,40 @@ exports.generatePodcast = onRequest(
   },
   createGeneratePodcastHandler(geminiApiKey, openRouterApiKey)
 );
+
+// ✅ 8. Populate Knowledge Base Function
+const { populateKnowledgeBase } = require('./knowledgeBaseExtractor');
+exports.populateKnowledgeBase = onRequest(
+  {
+    region: 'us-central1',
+    timeoutSeconds: 300,
+    memory: '512MiB',
+  },
+  populateKnowledgeBase
+);
+
+// ✅ 9. Inject Knowledge Base Entry Function
+const { injectKnowledgeBase } = require('./injectKnowledgeBase');
+exports.injectKnowledgeBase = onRequest(
+  {
+    region: 'us-central1',
+    timeoutSeconds: 60,
+    memory: '256MiB',
+  },
+  injectKnowledgeBase
+);
+
+// ✅ 10. Upload Knowledge Base Document Function
+const { uploadKnowledgeBase } = require('./uploadKnowledgeBase');
+exports.uploadKnowledgeBase = onRequest(
+  {
+    region: 'us-central1',
+    timeoutSeconds: 300,
+    memory: '512MiB',
+  },
+  uploadKnowledgeBase
+);
+
+// ✅ 11. Generate Embeddings Function
+const { generateEmbeddings } = require('./generateEmbeddings');
+exports.generateEmbeddings = generateEmbeddings;
