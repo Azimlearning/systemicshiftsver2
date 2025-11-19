@@ -13,9 +13,420 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image'; // For optimized image handling in Next.js
+
+/**
+ * Value Trajectory Chart Component - Isometric 3D Version
+ * 
+ * Displays the "Desired Upstream Value Trajectory" with isometric 3D stacked bar chart
+ * showing NPV progression from 2025 to 2035 with +30% target.
+ * 
+ * Built with: React + Tailwind CSS + Framer Motion + CSS Transforms (Isometric 3D)
+ */
+
+// Color definitions with 3D faces (top, side, front)
+const COLORS = {
+  PCSB: { top: '#14b8a6', side: '#0d9488', front: '#2dd4bf' }, // Teal
+  Vestigo: { top: '#8b5cf6', side: '#7c3aed', front: '#a78bfa' }, // Purple
+  PCIV: { top: '#fbbf24', side: '#d97706', front: '#fcd34d' }, // Yellow/Amber
+  CCS: { top: '#1e3a8a', side: '#172554', front: '#1e40af' }, // Dark Blue
+  Satellite: { top: '#a3e635', side: '#65a30d', front: '#bef264' }, // Lime Green
+};
+
+// Legend items
+const LEGEND_ITEMS = [
+  { label: 'PCSB', color: COLORS.PCSB.front },
+  { label: 'Vestigo', color: COLORS.Vestigo.front },
+  { label: 'PCIV', color: COLORS.PCIV.front },
+  { label: 'CCS', color: COLORS.CCS.front },
+  { label: 'Satellite Model', color: COLORS.Satellite.front },
+];
+
+// Bar data with segments (bottom to top)
+const BAR_DATA = [
+  {
+    year: '2025',
+    stack: [
+      { id: 'Vestigo', value: 5, color: COLORS.Vestigo },
+      { id: 'PCSB', value: 25, color: COLORS.PCSB },
+      { id: 'PCIV', value: 45, color: COLORS.PCIV },
+    ],
+    total: 75,
+  },
+  {
+    year: '2030',
+    label: 'Post Portfolio High-Grading',
+    stack: [
+      { id: 'Vestigo', value: 8, color: COLORS.Vestigo },
+      { id: 'PCSB', value: 30, color: COLORS.PCSB },
+      { id: 'Satellite', value: 12, color: COLORS.Satellite },
+      { id: 'PCIV', value: 20, color: COLORS.PCIV },
+    ],
+    total: 70,
+  },
+  {
+    year: '2035',
+    label: 'To Be',
+    stack: [
+      { id: 'Vestigo', value: 10, color: COLORS.Vestigo },
+      { id: 'PCSB', value: 35, color: COLORS.PCSB },
+      { id: 'Satellite', value: 15, color: COLORS.Satellite },
+      { id: 'PCIV', value: 30, color: COLORS.PCIV },
+      { id: 'CCS', value: 20, color: COLORS.CCS },
+    ],
+    total: 110, // +30% from 2025
+  },
+];
+
+// Simple 2D Stacked Bar Segment Component
+const StackedBarSegment = ({ 
+  color, 
+  height, 
+  index, 
+  barWidth = 120, 
+  onHover, 
+  onLeave,
+  segmentLabel,
+  segmentValue 
+}) => {
+  return (
+    <motion.div
+      initial={{ scaleY: 0, opacity: 0 }}
+      animate={{ scaleY: 1, opacity: 1 }}
+      transition={{ 
+        duration: 0.6, 
+        delay: index * 0.08, 
+        ease: "easeOut" 
+      }}
+      whileHover={{ 
+        opacity: 0.9,
+        transition: { duration: 0.2 }
+      }}
+      style={{ 
+        height: `${height}px`, 
+        transformOrigin: 'bottom',
+        width: `${barWidth}px`,
+      }}
+      className="relative cursor-pointer"
+      onMouseEnter={onHover}
+      onMouseLeave={onLeave}
+    >
+      <div
+        className="absolute w-full h-full border border-gray-300"
+        style={{ 
+          backgroundColor: color.front,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        }}
+      />
+    </motion.div>
+  );
+};
+
+// Tooltip Component for segment information
+const Tooltip = ({ segment, value, total, position, visible }) => {
+  if (!visible) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 10 }}
+      className="absolute bg-gray-900 text-white px-4 py-2 rounded-lg shadow-2xl z-50 pointer-events-none"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: 'translateX(-50%)',
+      }}
+    >
+      <div className="text-sm font-semibold mb-1">{segment}</div>
+      <div className="text-xs text-gray-300">Value: {value} RM Bil</div>
+      <div className="text-xs text-gray-300">Total: {total} RM Bil</div>
+      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+    </motion.div>
+  );
+};
+
+function ValueTrajectoryChart() {
+  const [hoveredSegment, setHoveredSegment] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [barPositions, setBarPositions] = useState({ bar2025: null, bar2035: null });
+  const bar2025Ref = useRef(null);
+  const bar2035Ref = useRef(null);
+  const barWidth = 120; // Width of each bar
+  const maxHeight = 400; // Maximum height for the tallest bar (2035 = 110)
+  const baseValue = 110; // The maximum value (2035 total)
+
+  // Calculate heights based on actual values, maintaining correct ratios
+  const calculateHeights = (data) => {
+    return data.map(col => ({
+      ...col,
+      stack: col.stack.map(block => ({
+        ...block,
+        height: (block.value / baseValue) * maxHeight, // Proportional height
+      })),
+      totalHeight: (col.total / baseValue) * maxHeight,
+    }));
+  };
+
+  const chartData = calculateHeights(BAR_DATA);
+
+  // Get bar positions for trajectory line
+  useEffect(() => {
+    const updateBarPositions = () => {
+      if (bar2025Ref.current && bar2035Ref.current) {
+        const container = bar2025Ref.current.closest('.chart-container');
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const chartContainer = bar2025Ref.current.closest('[style*="minHeight"]');
+          if (chartContainer) {
+            const chartRect = chartContainer.getBoundingClientRect();
+            const bar2025Rect = bar2025Ref.current.getBoundingClientRect();
+            const bar2035Rect = bar2035Ref.current.getBoundingClientRect();
+            
+            // Get the actual bar top (the stacked segments container)
+            const bar2025Stack = bar2025Ref.current.querySelector('[style*="height"]');
+            const bar2035Stack = bar2035Ref.current.querySelector('[style*="height"]');
+            
+            if (bar2025Stack && bar2035Stack) {
+              const bar2025StackRect = bar2025Stack.getBoundingClientRect();
+              const bar2035StackRect = bar2035Stack.getBoundingClientRect();
+              
+              setBarPositions({
+                bar2025: {
+                  x: bar2025Rect.left - chartRect.left + barWidth / 2,
+                  y: bar2025StackRect.top - chartRect.top,
+                },
+                bar2035: {
+                  x: bar2035Rect.left - chartRect.left + barWidth / 2,
+                  y: bar2035StackRect.top - chartRect.top,
+                },
+              });
+            }
+          }
+        }
+      }
+    };
+
+    updateBarPositions();
+    window.addEventListener('resize', updateBarPositions);
+    // Small delay to ensure layout is complete
+    setTimeout(updateBarPositions, 100);
+    setTimeout(updateBarPositions, 500);
+
+    return () => window.removeEventListener('resize', updateBarPositions);
+  }, []); // Empty dependency array - we only want to run this on mount and resize
+
+  const handleSegmentHover = (event, segment, value, total) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const container = event.currentTarget.closest('.chart-container');
+    if (container) {
+      const containerRect = container.getBoundingClientRect();
+      setTooltipPosition({
+        x: rect.left - containerRect.left + rect.width / 2,
+        y: rect.top - containerRect.top - 80,
+      });
+    }
+    setHoveredSegment({ segment, value, total });
+  };
+
+  const handleSegmentLeave = () => {
+    setHoveredSegment(null);
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto mb-16 bg-gradient-to-br from-blue-50 via-teal-50 to-indigo-50 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden chart-container">
+      {/* Enhanced background pattern - abstract data stream effect */}
+      <div 
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 30%, rgba(14, 184, 166, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 70%, rgba(37, 99, 235, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 2px 2px, rgba(0,0,0,0.1) 1px, transparent 0)
+          `,
+          backgroundSize: '100% 100%, 100% 100%, 40px 40px',
+        }}
+      />
+      
+      {/* Subtle grid lines */}
+      <svg 
+        className="absolute inset-0 w-full h-full pointer-events-none opacity-10"
+        style={{ zIndex: 1 }}
+      >
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0d9488" strokeWidth="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+      {/* Title Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="mb-8"
+      >
+        <h4 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
+          Desired Upstream Value Trajectory
+        </h4>
+        <div className="text-4xl md:text-5xl font-extrabold text-gray-900">
+          +30%
+        </div>
+      </motion.div>
+
+      {/* Chart Container */}
+      <div className="relative w-full overflow-x-auto">
+        {/* SVG for Trajectory Arrow and Y-axis */}
+        <svg 
+          className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none overflow-visible"
+          style={{ height: `${maxHeight + 100}px` }}
+          viewBox={`0 0 800 ${maxHeight + 100}`}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <marker 
+              id="arrowhead" 
+              markerWidth="10" 
+              markerHeight="7" 
+              refX="0" 
+              refY="3.5" 
+              orient="auto"
+            >
+              <polygon points="0 0, 10 3.5, 0 7" fill="#374151" />
+            </marker>
+          </defs>
+          
+          {/* Y-axis Label */}
+          <text
+            x="30"
+            y={maxHeight / 2}
+            className="text-sm font-semibold fill-gray-700"
+            transform={`rotate(-90 30 ${maxHeight / 2})`}
+          >
+            NPV (RM Bil)
+          </text>
+        </svg>
+
+        {/* Tooltip */}
+        {hoveredSegment && (
+          <Tooltip
+            segment={hoveredSegment.segment}
+            value={hoveredSegment.value}
+            total={hoveredSegment.total}
+            position={tooltipPosition}
+            visible={true}
+          />
+        )}
+
+        {/* Chart Bars Container */}
+        <div className="relative flex items-end justify-around pb-20 px-10" style={{ minHeight: `${maxHeight + 100}px` }}>
+          {chartData.map((col, colIndex) => {
+            let segmentIndex = 0;
+            const is2025 = col.year === '2025';
+            const is2035 = col.year === '2035';
+
+            return (
+              <div 
+                key={col.year} 
+                ref={is2025 ? bar2025Ref : is2035 ? bar2035Ref : null}
+                className="flex flex-col items-center relative group"
+                style={{ width: `${barWidth}px` }}
+                data-bar-index={colIndex}
+              >
+                {/* The Stack - rendered bottom to top */}
+                <div className="relative flex flex-col-reverse items-center" style={{ height: `${col.totalHeight}px` }}>
+                  {col.stack.map((block) => {
+                    const currentIndex = segmentIndex++;
+                    const segmentLabel = LEGEND_ITEMS.find(item => 
+                      item.label === block.id || 
+                      item.label === 'Satellite Model' && block.id === 'Satellite'
+                    )?.label || block.id;
+                    
+                    return (
+                      <StackedBarSegment
+                        key={block.id}
+                        color={block.color}
+                        height={block.height}
+                        index={colIndex * 10 + currentIndex}
+                        barWidth={barWidth}
+                        segmentLabel={segmentLabel}
+                        segmentValue={block.value}
+                        onHover={(e) => handleSegmentHover(e, segmentLabel, block.value, col.total)}
+                        onLeave={handleSegmentLeave}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* X-axis Label */}
+                <div className="mt-4 text-center text-gray-800 font-medium z-10">
+                  <p className="text-lg font-semibold">{col.year}</p>
+                  {col.label && (
+                    <p className="text-sm text-gray-600 mt-1">{col.label}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Trajectory Arrow - L-shaped: starts above 2025, goes up, horizontal across, vertical down to 2035 top */}
+        {barPositions.bar2025 && barPositions.bar2035 && (
+          <svg 
+            className="absolute top-0 left-0 w-full h-full z-5 pointer-events-none"
+            style={{ height: `${maxHeight + 100}px` }}
+          >
+            <motion.path
+              d={`M ${barPositions.bar2025.x} ${barPositions.bar2025.y - 30} 
+                  L ${barPositions.bar2025.x} ${barPositions.bar2035.y - 30} 
+                  L ${barPositions.bar2035.x} ${barPositions.bar2035.y - 30} 
+                  L ${barPositions.bar2035.x} ${barPositions.bar2035.y}`}
+              fill="none"
+              stroke="#374151"
+              strokeWidth="3"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 1.5, delay: 1.0, ease: "easeInOut" }}
+              markerEnd="url(#arrowhead)"
+            />
+          </svg>
+        )}
+      </div>
+
+      {/* Legend - Simple colored squares */}
+      <div className="flex flex-wrap justify-center gap-6 mt-8">
+        {LEGEND_ITEMS.map((item, index) => {
+          const colorObj = Object.values(COLORS).find(c => c.front === item.color) || { front: item.color };
+          
+          return (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ 
+                delay: 1.2 + index * 0.1, 
+                duration: 0.4
+              }}
+              className="flex items-center gap-2"
+            >
+              {/* Simple colored square */}
+              <div
+                className="w-5 h-5 border border-gray-300"
+                style={{
+                  backgroundColor: colorObj.front,
+                }}
+              />
+              <span className="text-sm font-semibold text-gray-800">{item.label}</span>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function UpstreamTarget() {
   // Track which target box is currently being hovered for interactive effects
@@ -426,22 +837,17 @@ export default function UpstreamTarget() {
         </div>
 
         {/* Upstream has set a clear end state heading */}
-        <h3 className="text-2xl md:text-3xl font-semibold text-gray-800 text-center mb-8">
-          Upstream has set a clear end state <br /> to be achieved by 2035
-        </h3>
+        <motion.h3 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-2xl md:text-3xl font-semibold text-gray-800 text-center mb-8"
+        >
+          Upstream has set a <span className="text-teal-600">clear end state</span> <br /> to be achieved by 2035
+        </motion.h3>
 
-        {/* Desired Upstream Value Trajectory Chart */}
-        <div className="flex justify-center mb-8">
-          {/* We assume you've placed 'value-trajectory-chart.png' in your 'public' folder */}
-          {/* For a real project, you'd export this section as an optimized image */}
-          <Image
-            src="/value-trajectory-chart.png" // Path to your extracted image
-            alt="Desired Upstream Value Trajectory Chart"
-            width={1000} // Adjust based on your image's intrinsic width
-            height={700} // Adjust based on your image's intrinsic height
-            className="max-w-full h-auto"
-          />
-        </div>
+        {/* Desired Upstream Value Trajectory Chart - Code-based */}
+        <ValueTrajectoryChart />
       </div>
     </section>
   );
