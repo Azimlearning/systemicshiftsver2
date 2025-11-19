@@ -26,6 +26,20 @@
         "*.local"
       ],
       "runtime": "nodejs20"
+    },
+    {
+      "source": "functions-python",
+      "codebase": "python",
+      "ignore": [
+        "venv",
+        "__pycache__",
+        "*.pyc",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "runtime": "python311"
     }
   ]
 }

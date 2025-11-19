@@ -244,16 +244,19 @@ export default function UpstreamGallery() {
       const tempFilename = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}.${fileExt}`;
       const tempStoragePath = `upstreamGallery/temp/${tempFilename}`;
 
+      console.log('[AI Analysis] Step 1: Uploading image to temporary storage...');
       // Upload to Firebase Storage (temporary location)
       const tempStorageRef = ref(storage, tempStoragePath);
       await uploadBytes(tempStorageRef, uploadFormData.file);
       const tempImageUrl = await getDownloadURL(tempStorageRef);
+      console.log('[AI Analysis] Step 1: Image uploaded successfully, URL:', tempImageUrl.substring(0, 100));
 
       // Call analyzeImage Cloud Function
       const analyzeFunctionUrl = "https://analyzeimage-el2jwxb5bq-uc.a.run.app";
       
-      console.log('[AI Analysis] Calling function with image URL:', tempImageUrl.substring(0, 100));
+      console.log('[AI Analysis] Step 2: Calling Cloud Function...');
       console.log('[AI Analysis] Function URL:', analyzeFunctionUrl);
+      console.log('[AI Analysis] Image URL length:', tempImageUrl.length);
       
       let response;
       try {
@@ -262,36 +265,115 @@ export default function UpstreamGallery() {
           headers: { 
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ imageUrl: tempImageUrl }),
-          mode: 'cors' // Explicitly set CORS mode
+          body: JSON.stringify({ imageUrl: tempImageUrl })
         });
-        console.log('[AI Analysis] Response received, status:', response.status);
+        console.log('[AI Analysis] Step 2: Response received, status:', response.status, 'ok:', response.ok);
       } catch (fetchError) {
         console.error('[AI Analysis] Fetch error details:', {
           message: fetchError.message,
           name: fetchError.name,
+          type: fetchError.constructor.name,
           stack: fetchError.stack
         });
-        // Check if it's a network error or CORS error
-        if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
-          throw new Error(`Network error: Unable to reach the server. Please check your internet connection and ensure the function is deployed.`);
+        
+        // Distinguish between different error types
+        let errorMessage = 'Unknown network error';
+        if (fetchError.message.includes('Failed to fetch')) {
+          // This could be: network down, CORS blocked, function not accessible
+          errorMessage = 'Unable to connect to the AI service. This could be due to:\n' +
+            '• Network connectivity issues\n' +
+            '• The function may need to be redeployed\n' +
+            '• CORS configuration issue\n\n' +
+            'Please try again or use manual entry.';
+        } else if (fetchError.message.includes('NetworkError') || fetchError.message.includes('Network request failed')) {
+          errorMessage = 'Network error: Unable to reach the server. Please check your internet connection.';
+        } else if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
+          errorMessage = 'Network request failed. Please check your internet connection and try again.';
+        } else {
+          errorMessage = `Network error: ${fetchError.message}`;
         }
-        throw new Error(`Network error: ${fetchError.message}. Please check your internet connection and try again.`);
-      }
-
-      if (!response.ok) {
-        let errorMessage = 'Failed to analyze image';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch (jsonError) {
-          const textError = await response.text().catch(() => '');
-          errorMessage = textError || `Server returned status ${response.status}`;
-        }
+        
         throw new Error(errorMessage);
       }
 
-      const analysisData = await response.json();
+      // Handle HTTP error responses
+      if (!response.ok) {
+        let errorMessage = `Server error (${response.status})`;
+        let errorDetails = '';
+        let errorData = null;
+        
+        // Try to get the response body
+        try {
+          const responseText = await response.text();
+          console.log('[AI Analysis] Raw error response:', responseText);
+          
+          if (responseText) {
+            try {
+              errorData = JSON.parse(responseText);
+              console.log('[AI Analysis] Parsed error data:', errorData);
+            } catch (parseErr) {
+              // If not JSON, use the text as the error message
+              errorMessage = responseText.substring(0, 200);
+              errorDetails = responseText;
+            }
+          }
+        } catch (textError) {
+          console.error('[AI Analysis] Failed to read error response:', textError);
+          errorDetails = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        
+        // Extract error message from parsed data
+        if (errorData) {
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' 
+              ? errorData.error 
+              : errorData.error.message || JSON.stringify(errorData.error);
+          }
+          
+          if (errorData.details) {
+            errorDetails = errorData.details;
+          }
+        }
+        
+        // Provide specific error messages based on status code (only if we don't have a better message)
+        if (errorMessage === `Server error (${response.status})`) {
+          if (response.status === 403) {
+            errorMessage = 'Access denied. The function may need to be configured for public access.';
+          } else if (response.status === 404) {
+            errorMessage = 'Function not found. The function may need to be redeployed.';
+          } else if (response.status === 500) {
+            errorMessage = errorData?.message || 'Server error occurred while analyzing the image. Please try again.';
+          } else if (response.status === 400) {
+            errorMessage = 'Invalid request. ' + (errorDetails || 'Please check the image URL.');
+          }
+        }
+        
+        console.error('[AI Analysis] Server error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorMessage: errorMessage || 'No error message',
+          errorDetails: errorDetails || 'No details',
+          errorData: errorData || 'No error data'
+        });
+        
+        throw new Error(errorMessage || `Server returned error status ${response.status}`);
+      }
+
+      // Parse successful response
+      let analysisData;
+      try {
+        analysisData = await response.json();
+        console.log('[AI Analysis] Step 3: Analysis data received:', {
+          success: analysisData.success,
+          category: analysisData.category,
+          tagsCount: analysisData.tags?.length || 0
+        });
+      } catch (parseError) {
+        console.error('[AI Analysis] JSON parse error:', parseError);
+        throw new Error('Invalid response from server. Please try again.');
+      }
 
       if (analysisData.success) {
         // Auto-fill form with AI suggestions
@@ -302,15 +384,27 @@ export default function UpstreamGallery() {
           tags: analysisData.tags ? analysisData.tags.join(', ') : prev.tags
         }));
         setEntryMode('auto');
+        console.log('[AI Analysis] Step 4: Form auto-filled successfully');
       } else {
-        throw new Error(analysisData.error || 'Analysis failed');
+        throw new Error(analysisData.error || 'Analysis failed - no data returned');
       }
 
     } catch (err) {
-      console.error("Error in AI analysis:", err);
+      console.error("[AI Analysis] Error in AI analysis:", {
+        message: err.message,
+        name: err.name,
+        stack: err.stack
+      });
+      
+      // Set error state for UI display
+      const userFriendlyMessage = err.message || 'An unexpected error occurred';
       setError('AI analysis failed. You can still fill in the form manually.');
-      alert('AI analysis failed: ' + err.message + '\n\nYou can still fill in the form manually.');
-      setEntryMode('manual'); // Fallback to manual mode
+      
+      // Show alert with detailed error
+      alert(`AI Analysis Failed\n\n${userFriendlyMessage}\n\nYou can still fill in the form manually.`);
+      
+      // Fallback to manual mode
+      setEntryMode('manual');
     } finally {
       setAnalyzing(false);
     }

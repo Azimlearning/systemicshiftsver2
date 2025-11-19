@@ -217,3 +217,9 @@ def generateImageHfPython(req: https_fn.Request) -> https_fn.Response:
             headers={"Content-Type": "application/json"}
         )
 
+
+# Import and export the analyze image function
+# The function is defined in analyze_image.py with @https_fn.on_request decorator
+# Firebase will automatically discover and deploy it
+from analyze_image import analyzeImagePython
+
