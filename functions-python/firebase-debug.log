@@ -65,3 +65,127 @@ ModuleNotFoundError: No module named 'firebase_functions'
     at ChildProcess._handle.onexit (node:internal/child_process:294:12)
 [error] 
 [error] Error: An unexpected error has occurred.
+[debug] [2025-11-19T12:31:51.451Z] ----------------------------------------------------------------------
+[debug] [2025-11-19T12:31:51.455Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions --project systemicshiftv2
+[debug] [2025-11-19T12:31:51.456Z] CLI Version:   14.24.2
+[debug] [2025-11-19T12:31:51.459Z] Platform:      win32
+[debug] [2025-11-19T12:31:51.460Z] Node Version:  v24.11.0
+[debug] [2025-11-19T12:31:51.460Z] Time:          Wed Nov 19 2025 20:31:51 GMT+0800 (Malaysia Time)
+[debug] [2025-11-19T12:31:51.460Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-11-19T12:31:51.768Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-11-19T12:31:51.769Z] > authorizing via signed-in user (fakhrulazim.am@gmail.com)
+[debug] [2025-11-19T12:31:51.769Z] [iam] checking project systemicshiftv2 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2025-11-19T12:31:51.770Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:51.770Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:51.771Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions [none]
+[debug] [2025-11-19T12:31:51.771Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions x-goog-quota-user=projects/systemicshiftv2
+[debug] [2025-11-19T12:31:51.771Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-11-19T12:31:52.990Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions 200
+[debug] [2025-11-19T12:31:52.991Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2025-11-19T12:31:52.993Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:52.993Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:52.993Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/systemicshiftv2/serviceAccounts/systemicshiftv2@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2025-11-19T12:31:52.993Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/systemicshiftv2/serviceAccounts/systemicshiftv2@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2025-11-19T12:31:54.315Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/systemicshiftv2/serviceAccounts/systemicshiftv2@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2025-11-19T12:31:54.316Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/systemicshiftv2/serviceAccounts/systemicshiftv2@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'systemicshiftv2'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint
+[info] +  functions: Finished running predeploy script. 
+[debug] [2025-11-19T12:31:55.020Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:55.020Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:55.020Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2 [none]
+[debug] [2025-11-19T12:31:55.288Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2 200
+[debug] [2025-11-19T12:31:55.289Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/systemicshiftv2 {"projectNumber":"436251067627","projectId":"systemicshiftv2","lifecycleState":"ACTIVE","name":"SystemicShiftV2","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2025-10-29T06:10:06.970173Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: preparing codebase chat for deployment 
+[info] i  functions: preparing codebase python for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2025-11-19T12:31:55.297Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:55.297Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:55.297Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/systemicshiftv2/adminSdkConfig [none]
+[debug] [2025-11-19T12:31:55.770Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/systemicshiftv2/adminSdkConfig 200
+[debug] [2025-11-19T12:31:55.770Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/systemicshiftv2/adminSdkConfig {"projectId":"systemicshiftv2","storageBucket":"systemicshiftv2.firebasestorage.app"}
+[debug] [2025-11-19T12:31:55.771Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:55.771Z] Checked if tokens are valid: true, expires at: 1763556891295
+[debug] [2025-11-19T12:31:55.771Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/systemicshiftv2/configs [none]
+[debug] [2025-11-19T12:31:56.078Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/systemicshiftv2/configs 200
+[debug] [2025-11-19T12:31:56.078Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/systemicshiftv2/configs {}
+[debug] [2025-11-19T12:31:56.081Z] Validating nodejs source
+[debug] [2025-11-19T12:31:57.778Z] > [functions] package.json contents: {
+  "name": "functions",
+  "version": "1.0.0",
+  "description": "Firebase Cloud Functions - Hugging Face image generator",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "start": "functions-framework --target=generateImageHf --signature-type=http",
+    "lint": "echo \"No linter configured\""
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@google-cloud/secret-manager": "5.6.0",
+    "@google-cloud/storage": "^7.11.0",
+    "busboy": "^1.6.0",
+    "cors": "^2.8.5",
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^7.0.0",
+    "mammoth": "^1.6.0",
+    "node-fetch": "2.7.0",
+    "pdf-parse": "^1.1.1",
+    "tesseract.js": "^5.0.4"
+  }
+}
+[debug] [2025-11-19T12:31:57.778Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2025-11-19T12:31:57.779Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-19T12:31:57.791Z] Found firebase-functions binary at 'C:\Users\User\Documents\Coding\SIP\Systemic Shifts Microsite\systemicshiftsver2\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8602
+
+[debug] [2025-11-19T12:31:59.186Z] Got response from /__/functions.yaml {"endpoints":{"generateImageHf":{"availableMemoryMb":1024,"timeoutSeconds":540,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","cpu":1,"region":["us-central1"],"secretEnvironmentVariables":[{"key":"HF_API_TOKEN"}],"labels":{},"httpsTrigger":{},"entryPoint":"generateImageHf"},"submitStory":{"availableMemoryMb":1024,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["us-central1"],"secretEnvironmentVariables":[{"key":"GOOGLE_GENAI_API_KEY"},{"key":"OPENROUTER_API_KEY"}],"labels":{},"httpsTrigger":{},"entryPoint":"submitStory"},"analyzeStorySubmission":{"availableMemoryMb":1024,"timeoutSeconds":540,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["us-central1"],"secretEnvironmentVariables":[{"key":"GOOGLE_GENAI_API_KEY"},{"key":"OPENROUTER_API_KEY"}],"labels":{},"eventTrigger":{"eventType":"google.cloud.firestore.document.v1.created","eventFilters":{"database":"(default)","namespace":"(default)"},"eventFilterPathPatterns":{"document":"stories/{storyId}"},"retry":false},"entryPoint":"analyzeStorySubmission"},"triggerImageGeneration":{"availableMemoryMb":1024,"timeoutSeconds":600,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["us-central1"],"secretEnvironmentVariables":[{"key":"GOOGLE_GENAI_API_KEY"},{"key":"OPENROUTER_API_KEY"}],"labels":{},"httpsTrigger":{},"entryPoint":"triggerImageGeneration"},"askChatbot":{"availableMemoryMb":null,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["us-central1"],"secretEnvironmentVariables":[{"key":"GOOGLE_GENAI_API_KEY"},{"key":"OPENROUTER_API_KEY"}],"labels":{},"httpsTrigger":{},"entryPoint":"askChatbot"},"analyzeImage":{"availableMemoryMb":1024,"timeoutSeconds":120,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["us-central1"],"secretEnvironmentVariables":[{"key":"GOOGLE_GENAI_API_KEY"},{"key":"OPENROUTER_API_KEY"}],"labels":{},"httpsTrigger":{},"entryPoint":"analyzeImage"},"generatePodcast":{"availableMemoryMb":1024,"timeoutSeconds":300,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["us-central1"],"secretEnvironmentVariables":[{"key":"GOOGLE_GENAI_API_KEY"},{"key":"OPENROUTER_API_KEY"}],"labels":{},"httpsTrigger":{},"entryPoint":"generatePodcast"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{},"params":[{"type":"secret","name":"GOOGLE_GENAI_API_KEY"},{"type":"secret","name":"OPENROUTER_API_KEY"},{"type":"secret","name":"HF_API_TOKEN"}]}
+[debug] [2025-11-19T12:32:03.262Z] Validating nodejs source
+[debug] [2025-11-19T12:32:05.028Z] > [functions] package.json contents: {
+  "name": "chat-function",
+  "description": "Chat function for Systemic Shifts",
+  "dependencies": {
+    "firebase-functions": "^5.0.1"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "private": true
+}
+[debug] [2025-11-19T12:32:05.028Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase chat to determine what to deploy 
+[debug] [2025-11-19T12:32:05.028Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-19T12:32:05.037Z] Found firebase-functions binary at 'C:\Users\User\Documents\Coding\SIP\Systemic Shifts Microsite\systemicshiftsver2\node_modules\.bin\firebase-functions'
+[info] Serving at port 8596
+
+[debug] [2025-11-19T12:32:06.288Z] Got response from /__/functions.yaml {"endpoints":{"chat":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","labels":{},"httpsTrigger":{},"entryPoint":"chat"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+[debug] [2025-11-19T12:32:10.337Z] Customer code is not Node
+[debug] [2025-11-19T12:32:10.338Z] Validating python source
+[debug] [2025-11-19T12:32:10.338Z] Building python source
+[info] i  functions: Loading and analyzing source code for codebase python to determine what to deploy 
+[debug] [2025-11-19T12:32:10.338Z] Could not find functions.yaml. Must use http discovery
+[debug] [2025-11-19T12:32:10.352Z] Running command with virtualenv: command="C:\Users\User\Documents\Coding\SIP\Systemic Shifts Microsite\systemicshiftsver2\functions-python\venv\Scripts\activate.bat", args=["","&&","python.exe","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2025-11-19T12:32:10.735Z] stderr: Traceback (most recent call last):
+
+[debug] [2025-11-19T12:32:10.738Z] stderr:   File "<string>", line 1, in <module>
+    import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'firebase_functions'
+
+[debug] [2025-11-19T12:32:10.817Z] Error: spawn "C:\Users\User\Documents\Coding\SIP\Systemic Shifts Microsite\systemicshiftsver2\functions-python\venv\Scripts\activate.bat" ENOENT
+    at notFoundError (C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:6:26)
+    at verifyENOENT (C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:40:16)
+    at cp.emit (C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\cross-spawn\lib\enoent.js:27:25)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12)
+[error] 
+[error] Error: An unexpected error has occurred.

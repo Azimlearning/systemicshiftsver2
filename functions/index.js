@@ -471,15 +471,12 @@ exports.analyzeImage = onRequest(
     memory: '1GiB',
   },
   (req, res) => {
-    console.log(`[analyzeImage] Function called - Method: ${req.method}, Headers:`, JSON.stringify(req.headers));
     cors(req, res, async () => {
-      console.log(`[analyzeImage] Inside CORS handler - Method: ${req.method}`);
       if (req.method !== "POST") {
         return res.status(405).send({ error: "Method Not Allowed" });
       }
 
       try {
-        console.log(`[analyzeImage] Request body:`, JSON.stringify(req.body));
         const { imageUrl } = req.body;
 
         if (!imageUrl || typeof imageUrl !== 'string') {
@@ -509,9 +506,22 @@ exports.analyzeImage = onRequest(
 
       } catch (error) {
         console.error("[analyzeImage] Error:", error);
+        const errorMessage = error.message || "Unknown error occurred";
+        const errorDetails = error.stack ? error.stack.substring(0, 500) : '';
+        
+        // Check if it's an OpenRouter authentication error
+        if (errorMessage.includes('401') || errorMessage.includes('User not found')) {
+          return res.status(500).send({
+            error: "OpenRouter API authentication failed",
+            message: "The OpenRouter API key is invalid or expired. Please check your API key configuration.",
+            details: "OpenRouter returned: User not found (401)"
+          });
+        }
+        
         res.status(500).send({
           error: "Failed to analyze image",
-          message: error.message
+          message: errorMessage,
+          details: errorDetails
         });
       }
     });
