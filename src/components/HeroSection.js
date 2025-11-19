@@ -23,50 +23,30 @@ export default function HeroSection() {
         <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-4 animate-fade-in-up">
           UPSTREAMBUZZ
         </h1>
-        <p className="text-xl md:text-2xl text-cyan-200 mb-10 animate-fade-in-up delay-200">
+        <p className="text-xl md:text-2xl text-cyan-200 mb-12 animate-fade-in-up delay-200">
           Your Source for PETRONAS Upstream Stories & Insights
         </p>
 
-        <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-6 md:p-8 max-w-2xl mx-auto shadow-xl border border-teal-600 mb-12 animate-fade-in-up delay-400">
-          <h3 className="text-2xl md:text-3xl font-bold text-cyan-300 mb-4">Systemic Shifts Highlights</h3>
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            {/* --- UPDATED Placeholder Image Area --- */}
-            <div className="relative w-full md:w-1/3 aspect-video md:aspect-square rounded-lg overflow-hidden shadow-md border border-teal-500 flex-shrink-0 bg-gray-300 flex items-center justify-center text-gray-600 italic">
-               Image Placeholder
+        {/* Quick Stats Section - Replaces redundant highlights card */}
+        <div className="max-w-4xl mx-auto animate-fade-in-up delay-400">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4 md:p-6 text-center border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="text-3xl md:text-4xl font-bold text-cyan-300 mb-2">30%</div>
+              <div className="text-sm md:text-base text-teal-100">Value Improvement Target</div>
             </div>
-            {/* --- END UPDATE --- */}
-            <div className="text-left md:w-2/3">
-              <p className="text-lg text-gray-100 font-semibold mb-2">Innovation at Scale: Real-Time Optimisation</p>
-              <p className="text-md text-gray-300 mb-4 line-clamp-3">
-                Discover how our teams are leveraging cutting-edge technology for real-time optimisation, driving efficiency and sustainability across our upstream operations...
-              </p>
-              <Link href="#our-progress" className="inline-block bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md">
-                Read More
-              </Link>
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4 md:p-6 text-center border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="text-3xl md:text-4xl font-bold text-cyan-300 mb-2">2035</div>
+              <div className="text-sm md:text-base text-teal-100">Vision Year</div>
+            </div>
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4 md:p-6 text-center border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="text-3xl md:text-4xl font-bold text-cyan-300 mb-2">10</div>
+              <div className="text-sm md:text-base text-teal-100">Key Shifts</div>
+            </div>
+            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-4 md:p-6 text-center border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300">
+              <div className="text-3xl md:text-4xl font-bold text-cyan-300 mb-2">3</div>
+              <div className="text-sm md:text-base text-teal-100">Core Goals</div>
             </div>
           </div>
-        </div>
-
-        {/* Call to Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center gap-6 animate-fade-in-up delay-600">
-          {/* --- NEW BUTTON --- */}
-          <Link
-            href="/login" // Link to the login page first
-            className="bg-white bg-opacity-80 hover:bg-opacity-100 text-teal-800 font-bold py-3 px-8 rounded-full transition-colors shadow-lg text-lg border border-white border-opacity-30"
-          >
-            NexusHub
-          </Link>
-          {/* --- END NEW BUTTON --- */}
-
-          <Link href="#submit-stories" className="bg-cyan-500 hover:bg-cyan-600 text-teal-900 font-bold py-3 px-8 rounded-full transition-colors shadow-lg text-lg">
-            Submit Your Story
-          </Link>
-          <Link
-            href="#key-shifts"
-            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg text-lg border border-white border-opacity-30"
-          >
-            Explore Key Shifts
-          </Link>
         </div>
       </div>
     </section>

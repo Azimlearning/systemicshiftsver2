@@ -19,12 +19,17 @@ import { FaBars, FaTimes, FaChevronDown } from 'react-icons/fa';
  */
 export default function Header() {
   const [isSystemicShiftsOpen, setIsSystemicShiftsOpen] = useState(false);
+  const [isUlearnOpen, setIsUlearnOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const systemicShiftsDropdownRef = useRef(null);
+  const ulearnDropdownRef = useRef(null);
   const pathname = usePathname();
 
   // Check if we're in the Systemic Shifts section
   const isInSystemicShifts = pathname?.startsWith('/systemic-shifts');
+  
+  // Check if we're in the Ulearn section
+  const isInUlearn = pathname?.startsWith('/ulearn');
 
   // Navigation items structure
   const navItems = [
@@ -41,7 +46,17 @@ export default function Header() {
         { name: 'Our Progress', href: '/systemic-shifts/our-progress' },
       ]
     },
-    { name: 'Ulearn', href: '/ulearn', type: 'link' },
+    { name: 'Articles', href: '/articles', type: 'link' },
+    { 
+      name: 'Ulearn', 
+      href: '/ulearn', 
+      type: 'dropdown',
+      subItems: [
+        { name: 'Overview', href: '/ulearn' },
+        { name: 'Quizzes', href: '/ulearn/quizzes' },
+        { name: 'AI Podcast Generator', href: '/ulearn/podcast' },
+      ]
+    },
     { name: 'StatsX', href: '/statsx', type: 'link' },
     { name: 'MeetX', href: '/meetx', type: 'link' },
     { name: 'NexusHub', href: '/nexushub', type: 'link' },
@@ -49,27 +64,31 @@ export default function Header() {
     { name: 'Submit Stories', href: '/submit-story', type: 'link' },
   ];
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      if (systemicShiftsDropdownRef.current && !systemicShiftsDropdownRef.current.contains(event.target)) {
         setIsSystemicShiftsOpen(false);
+      }
+      if (ulearnDropdownRef.current && !ulearnDropdownRef.current.contains(event.target)) {
+        setIsUlearnOpen(false);
       }
     };
 
-    if (isSystemicShiftsOpen) {
+    if (isSystemicShiftsOpen || isUlearnOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isSystemicShiftsOpen]);
+  }, [isSystemicShiftsOpen, isUlearnOpen]);
 
   // Close mobile menu when a link is clicked
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
     setIsSystemicShiftsOpen(false);
+    setIsUlearnOpen(false);
   };
 
   return (
@@ -92,13 +111,20 @@ export default function Header() {
         <nav className="hidden md:flex justify-center items-center gap-1">
           {navItems.map((item) => {
             if (item.type === 'dropdown') {
+              const isSystemicShifts = item.name === 'Systemic Shifts';
+              const isUlearn = item.name === 'Ulearn';
+              const isOpen = isSystemicShifts ? isSystemicShiftsOpen : (isUlearn ? isUlearnOpen : false);
+              const setIsOpen = isSystemicShifts ? setIsSystemicShiftsOpen : (isUlearn ? setIsUlearnOpen : () => {});
+              const dropdownRef = isSystemicShifts ? systemicShiftsDropdownRef : (isUlearn ? ulearnDropdownRef : null);
+              const isInSection = isSystemicShifts ? isInSystemicShifts : (isUlearn ? isInUlearn : false);
+              
               return (
                 <div 
                   key={item.name}
                   ref={dropdownRef}
                   className="relative"
-                  onMouseEnter={() => setIsSystemicShiftsOpen(true)}
-                  onMouseLeave={() => setIsSystemicShiftsOpen(false)}
+                  onMouseEnter={() => setIsOpen(true)}
+                  onMouseLeave={() => setIsOpen(false)}
                 >
                   <Link
                     href={item.href}
@@ -106,7 +132,7 @@ export default function Header() {
                       flex items-center justify-center h-full px-3 lg:px-4
                       text-center text-sm font-semibold transition-all duration-200 ease-in-out
                       relative group whitespace-nowrap
-                      ${isInSystemicShifts ? 'text-white' : 'text-cyan-200 hover:text-white'}
+                      ${isInSection ? 'text-white' : 'text-cyan-200 hover:text-white'}
                     `}
                   >
                     {item.name}
@@ -115,13 +141,13 @@ export default function Header() {
                       className={`
                         absolute bottom-0 left-0 w-full h-1 bg-cyan-300 rounded-t-full
                         transition-all duration-300 ease-out transform
-                        ${isInSystemicShifts ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}
+                        ${isInSection ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'}
                       `}
                     />
                   </Link>
 
                   {/* Dropdown Menu */}
-                  {isSystemicShiftsOpen && (
+                  {isOpen && (
                     <div className="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                       {item.subItems?.map((subItem) => {
                         const isActive = pathname === subItem.href;
@@ -129,7 +155,7 @@ export default function Header() {
                           <Link
                             key={subItem.name}
                             href={subItem.href}
-                            onClick={() => setIsSystemicShiftsOpen(false)}
+                            onClick={() => setIsOpen(false)}
                             className={`
                               block px-4 py-2 text-sm transition-colors
                               ${isActive
@@ -208,16 +234,21 @@ export default function Header() {
           
           {navItems.map((item) => {
             if (item.type === 'dropdown') {
+              const isSystemicShifts = item.name === 'Systemic Shifts';
+              const isUlearn = item.name === 'Ulearn';
+              const isOpen = isSystemicShifts ? isSystemicShiftsOpen : (isUlearn ? isUlearnOpen : false);
+              const setIsOpen = isSystemicShifts ? setIsSystemicShiftsOpen : (isUlearn ? setIsUlearnOpen : () => {});
+              
               return (
                 <div key={item.name} className="flex flex-col items-center gap-2">
                   <button
-                    onClick={() => setIsSystemicShiftsOpen(!isSystemicShiftsOpen)}
+                    onClick={() => setIsOpen(!isOpen)}
                     className="text-cyan-200 hover:text-white text-2xl font-semibold flex items-center gap-2"
                   >
                     {item.name}
-                    <FaChevronDown className={`text-sm transition-transform ${isSystemicShiftsOpen ? 'rotate-180' : ''}`} />
+                    <FaChevronDown className={`text-sm transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                   </button>
-                  {isSystemicShiftsOpen && (
+                  {isOpen && (
                     <div className="flex flex-col gap-3 mt-2">
                       {item.subItems?.map((subItem) => (
                         <Link

@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FaVideo, FaQuestionCircle, FaPodcast, FaGraduationCap } from 'react-icons/fa';
+import { FaQuestionCircle, FaPodcast, FaGraduationCap } from 'react-icons/fa';
 
 const UlearnLanding = () => (
   <div className="bg-white p-12 rounded-lg shadow-lg">
@@ -20,22 +20,7 @@ const UlearnLanding = () => (
     </div>
 
     {/* Quick Links Cards */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-      {/* Uflix Card */}
-      <Link href="/ulearn/uflix" className="group">
-        <div className="bg-gradient-to-br from-teal-50 to-cyan-50 p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-teal-500">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="bg-teal-600 p-3 rounded-lg group-hover:scale-110 transition-transform">
-              <FaVideo className="text-white text-2xl" />
-            </div>
-            <h3 className="text-2xl font-bold text-teal-700">Uflix</h3>
-          </div>
-          <p className="text-gray-700">
-            Video learning platform featuring Systemic Shifts Unplugged and other educational content.
-          </p>
-        </div>
-      </Link>
-
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
       {/* Quizzes Card */}
       <Link href="/ulearn/quizzes" className="group">
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-purple-500">

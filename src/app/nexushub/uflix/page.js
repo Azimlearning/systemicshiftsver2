@@ -1,4 +1,4 @@
-// src/app/ulearn/uflix/page.js
+// src/app/nexushub/uflix/page.js
 'use client';
 
 import { FaVideo, FaClock } from 'react-icons/fa';
