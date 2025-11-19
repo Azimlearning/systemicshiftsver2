@@ -150,33 +150,33 @@ export default function KeyShifts() {
   ];
 
   return (
-    <section id="key-shifts" className="bg-gradient-to-br from-teal-800 via-teal-900 to-indigo-900 text-white py-16 md:py-24">
+    <section id="key-shifts" className="bg-gradient-to-br from-teal-800 via-teal-900 to-indigo-900 text-white pt-8 md:pt-12 pb-8 md:pb-12 scroll-mt-32">
       <div className="container mx-auto px-4 max-w-6xl">
-        {/* Logo and Quote Section */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-12 gap-8">
-          {/* Logo */}
+        {/* Logo and Quote Section - Compact */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 md:mb-8 gap-4 md:gap-6">
+          {/* Logo - Smaller */}
           <div className="flex-shrink-0">
             <Image
               src="/Systemic-Shifts-Logo/systemic-shifts-logo-BlackWhite.png"
               alt="Upstream Systemic Shifts Logo"
-              width={250}
-              height={70}
+              width={200}
+              height={56}
               className="h-auto"
             />
           </div>
           
-          {/* Quote Text - Written in code, not AI-generated */}
-          <div className="md:ml-8 flex-grow bg-white rounded-xl p-6 md:p-8 shadow-xl">
+          {/* Quote Text - Written in code, not AI-generated - More Compact */}
+          <div className="md:ml-6 flex-grow bg-white rounded-xl p-4 md:p-6 shadow-xl">
             <div className="relative">
-              <div className="text-6xl md:text-8xl text-teal-500 font-serif leading-none" style={{ lineHeight: '0.5' }}>
+              <div className="text-4xl md:text-6xl text-teal-500 font-serif leading-none" style={{ lineHeight: '0.5' }}>
                 &ldquo;
               </div>
-              <p className="text-lg md:text-xl text-teal-600 leading-relaxed relative z-10 -mt-4 md:-mt-6 pl-4">
+              <p className="text-base md:text-lg text-teal-600 leading-relaxed relative z-10 -mt-3 md:-mt-4 pl-3">
                 In adapting to the ever-evolving business landscape, we need to reshape how we operate as an Upstream business. Our strategy is anchored on being a{' '}
                 <span className="font-bold text-teal-700">Pure Commercial Play</span>, driven by{' '}
                 <span className="font-bold text-teal-700">two key shifts</span>.
               </p>
-              <div className="text-6xl md:text-8xl text-teal-500 font-serif leading-none text-right mt-2" style={{ lineHeight: '0.5' }}>
+              <div className="text-4xl md:text-6xl text-teal-500 font-serif leading-none text-right mt-1" style={{ lineHeight: '0.5' }}>
                 &rdquo;
               </div>
             </div>
@@ -214,7 +214,7 @@ export default function KeyShifts() {
           </div>
 
           {/* Tab Content Area - Gradient background with grey/black text */}
-          <div className="p-6 md:p-8 bg-gradient-to-br from-blue-900 via-teal-800 to-teal-700 min-h-[500px]">
+          <div className="p-4 md:p-6 bg-gradient-to-br from-blue-900 via-teal-800 to-teal-700 min-h-[400px]">
             <AnimatePresence mode="wait">
               {activeTab === 'portfolio' && (
                 <motion.div
@@ -226,22 +226,22 @@ export default function KeyShifts() {
                   className="w-full"
                 >
                   {/* Header */}
-                  <p className="text-lg md:text-xl text-white mb-6 leading-relaxed">
+                  <p className="text-base md:text-lg text-white mb-4 leading-relaxed">
                     Accelerate Portfolio High-Grading means actively reshaping our portfolio to focus on the assets that create the most value, with the discipline to divest or withdraw from those that are not value-accretive.
                   </p>
                   
                   {/* Divider */}
-                  <div className="h-px bg-gray-400 mb-8"></div>
+                  <div className="h-px bg-gray-400 mb-6"></div>
 
                   {/* Portfolio Items */}
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {portfolioItems.map((item, index) => (
                       <motion.div
                         key={item.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1, duration: 0.4 }}
-                        className="bg-white rounded-lg p-4 md:p-6 shadow-md border border-gray-300"
+                        className="bg-white rounded-lg p-3 md:p-4 shadow-md border border-gray-300"
                       >
                         <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">{item.title}</h3>
                         <p className="text-gray-700 text-sm md:text-base flex items-start">
@@ -253,12 +253,12 @@ export default function KeyShifts() {
                   </div>
                   
                   {/* Button to open 10 Shifts popup */}
-                  <div className="text-center mt-8">
+                  <div className="text-center mt-6">
                     <motion.button
                       onClick={() => setIsPopupOpen(true)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition-all duration-200"
+                      className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 text-sm md:text-base"
                     >
                       Click here to see 10 Shifts
                     </motion.button>
@@ -276,22 +276,22 @@ export default function KeyShifts() {
                   className="w-full"
                 >
                   {/* Header */}
-                  <p className="text-lg md:text-xl text-white mb-6 leading-relaxed">
+                  <p className="text-base md:text-lg text-white mb-4 leading-relaxed">
                     Deliver Advantaged Barrels means improving our internal efficiencies by focusing on safe, low cost, low carbon and high-margin barrels, through:
                   </p>
                   
                   {/* Divider */}
-                  <div className="h-px bg-gray-400 mb-8"></div>
+                  <div className="h-px bg-gray-400 mb-6"></div>
 
                   {/* Barrels Sections */}
-                  <div className="space-y-8">
+                  <div className="space-y-5">
                     {barrelsSections.map((section, index) => (
                       <motion.div
                         key={section.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.15, duration: 0.4 }}
-                        className="bg-white rounded-lg p-4 md:p-6 shadow-md border border-gray-300"
+                        className="bg-white rounded-lg p-3 md:p-4 shadow-md border border-gray-300"
                       >
                         <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">{section.title}</h3>
                         <ul className="space-y-2">
@@ -307,12 +307,12 @@ export default function KeyShifts() {
                   </div>
                   
                   {/* Button to open 10 Shifts popup */}
-                  <div className="text-center mt-8">
+                  <div className="text-center mt-6">
                     <motion.button
                       onClick={() => setIsPopupOpen(true)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition-all duration-200"
+                      className="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transition-all duration-200 text-sm md:text-base"
                     >
                       Click here to see 10 Shifts
                     </motion.button>
@@ -354,17 +354,25 @@ export default function KeyShifts() {
                   <FaTimes className="text-gray-700 text-xl" />
                 </button>
 
-                {/* Popup Content - Scrollable and Compact */}
+                {/* Popup Content - Using Image */}
                 <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white" style={{ maxHeight: 'calc(90vh - 2rem)' }}>
-                  {/* Title - Smaller */}
+                  <Image
+                    src="/key-shifts-10-shifts-flow.png"
+                    alt="10 Shifts - Differentiated outcomes for 30% value improvement by 2035"
+                    width={1200}
+                    height={1800}
+                    className="w-full h-auto rounded-lg"
+                  />
+                </div>
+
+                {/* COMMENTED OUT: Code-based 10 Shifts content - kept for reference
+                <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white" style={{ maxHeight: 'calc(90vh - 2rem)' }}>
                   <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2 text-center">10 Shifts</h2>
                   
-                  {/* Objective Text - Smaller */}
                   <p className="text-sm md:text-base text-gray-700 mb-4 text-center leading-relaxed">
                     The 10 Shifts define the differentiated outcomes that Upstream is pursuing to achieve 30% value improvement by 2035, with added focus on accelerating time-to-value and increasing the size of value.
                   </p>
 
-                  {/* Phase Timeline - More Compact */}
                   <div className="flex items-center justify-center mb-4 bg-green-600 rounded-lg p-2">
                     <div className="flex items-center gap-1 md:gap-2 text-white font-semibold text-xs md:text-sm">
                       <span>EXPLORATION</span>
@@ -377,7 +385,6 @@ export default function KeyShifts() {
                     </div>
                   </div>
 
-                  {/* Legend - More Compact */}
                   <div className="flex justify-end gap-4 mb-4 text-xs">
                     <div className="flex items-center gap-1 text-gray-700">
                       <FaClock className="text-gray-700 text-sm" />
@@ -389,7 +396,6 @@ export default function KeyShifts() {
                     </div>
                   </div>
 
-                  {/* 10 Shifts List - More Compact */}
                   <div className="space-y-2">
                     {tenShifts.map((shift, index) => (
                       <motion.div
@@ -431,13 +437,13 @@ export default function KeyShifts() {
                     ))}
                   </div>
 
-                  {/* Concluding Statement - Smaller */}
                   <div className="mt-4 text-center">
                     <p className="text-gray-800 text-sm md:text-base font-semibold">
                       Safe, Focused portfolio through accelerated portfolio high-grading, Highly efficient, and AI-enabled operations.
                     </p>
                   </div>
                 </div>
+                */}
               </motion.div>
             </motion.div>
           </>
