@@ -2,6 +2,7 @@
 
 import Header from '../../components/Header';
 import Hero from '../../components/Hero';
+import Petronas20Articles from '../../components/Petronas20Articles';
 import Footer from '../../components/Footer';
 
 export default function Petronas20Page() {
@@ -12,6 +13,9 @@ export default function Petronas20Page() {
         <section id="petronas-2.0">
           <Hero />
         </section>
+        
+        {/* Featured Articles Section */}
+        <Petronas20Articles />
       </main>
       <Footer />
     </div>
