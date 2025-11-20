@@ -33,13 +33,47 @@ async function extractTextFromFile(filePath, fileExt) {
   let extractedText = "";
 
   try {
+    // Verify file exists and has content
+    if (!fs.existsSync(filePath)) {
+      throw new Error('File does not exist');
+    }
+
+    const stats = fs.statSync(filePath);
+    if (stats.size === 0) {
+      throw new Error('File is empty');
+    }
+
     if (fileExt === '.pdf') {
       const dataBuffer = fs.readFileSync(filePath);
-      const data = await pdf(dataBuffer);
-      extractedText = data.text;
+      
+      // Validate PDF buffer
+      if (!dataBuffer || dataBuffer.length === 0) {
+        throw new Error('PDF file buffer is empty');
+      }
+      
+      // Check if it's a valid PDF (starts with %PDF)
+      // Some PDFs might have BOM or whitespace, so check first few bytes
+      const firstBytes = dataBuffer.slice(0, Math.min(1024, dataBuffer.length));
+      const pdfHeader = firstBytes.toString('ascii', 0, Math.min(4, firstBytes.length));
+      
+      // Check for PDF signature (can be at different positions due to BOM)
+      const bufferString = firstBytes.toString('ascii');
+      if (!bufferString.includes('%PDF')) {
+        throw new Error('File does not appear to be a valid PDF. PDF header not found.');
+      }
+      
+      console.log(`[Upload Knowledge Base] PDF file validated, size: ${dataBuffer.length} bytes`);
+      
+      try {
+        const data = await pdf(dataBuffer);
+        extractedText = data.text || '';
+      } catch (pdfError) {
+        console.error(`[Upload Knowledge Base] PDF parsing error:`, pdfError);
+        throw new Error(`Failed to parse PDF: ${pdfError.message}`);
+      }
     } else if (fileExt === '.docx' || fileExt === '.doc') {
       const result = await mammoth.extractRawText({ path: filePath });
-      extractedText = result.value;
+      extractedText = result.value || '';
     } else if (fileExt === '.txt') {
       extractedText = fs.readFileSync(filePath, 'utf-8');
     }
@@ -77,19 +111,64 @@ exports.uploadKnowledgeBase = async (req, res) => {
         const { filename, mimeType } = filenameDetails;
         fileName = filename;
         fileMimeType = mimeType;
-        filePath = path.join(tmpdir, filename);
+        filePath = path.join(tmpdir, `${Date.now()}_${filename}`);
         const writeStream = fs.createWriteStream(filePath);
-        file.pipe(writeStream);
-
-        file.on('end', () => writeStream.end());
+        
+        // Create promise to wait for file write completion
+        const fileWritePromise = new Promise((resolve, reject) => {
+          file.pipe(writeStream);
+          
+          writeStream.on('finish', () => {
+            console.log(`[Upload Knowledge Base] File written successfully: ${filePath}`);
+            resolve();
+          });
+          
+          writeStream.on('error', (err) => {
+            console.error(`[Upload Knowledge Base] Write error:`, err);
+            reject(err);
+          });
+          
+          file.on('error', (err) => {
+            console.error(`[Upload Knowledge Base] File stream error:`, err);
+            reject(err);
+          });
+        });
+        
+        // Store promise for later use
+        formData._fileWritePromise = fileWritePromise;
       }
     });
 
     busboy.on('finish', async () => {
       try {
+        // Wait for file to be fully written
+        if (formData._fileWritePromise) {
+          try {
+            await formData._fileWritePromise;
+          } catch (writeError) {
+            console.error('[Upload Knowledge Base] File write failed:', writeError);
+            return res.status(500).send({
+              success: false,
+              error: `Failed to save uploaded file: ${writeError.message}`
+            });
+          }
+        }
+        
+        // Additional small delay to ensure file system sync
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         if (!filePath || !fs.existsSync(filePath)) {
           return res.status(400).send({ error: 'No file uploaded' });
         }
+
+        // Check file size
+        const stats = fs.statSync(filePath);
+        if (stats.size === 0) {
+          fs.unlinkSync(filePath);
+          return res.status(400).send({ error: 'Uploaded file is empty' });
+        }
+
+        console.log(`[Upload Knowledge Base] Processing file: ${fileName} (${stats.size} bytes)`);
 
         const fileExt = path.extname(fileName).toLowerCase();
         const allowedExt = ['.pdf', '.docx', '.doc', '.txt'];
@@ -102,7 +181,29 @@ exports.uploadKnowledgeBase = async (req, res) => {
         }
 
         // Extract text from file
-        const extractedText = await extractTextFromFile(filePath, fileExt);
+        let extractedText = '';
+        try {
+          extractedText = await extractTextFromFile(filePath, fileExt);
+          
+          // Validate extracted text
+          if (!extractedText || extractedText.trim().length === 0) {
+            console.warn(`[Upload Knowledge Base] No text extracted from file - may be image-only PDF or empty document`);
+            // Continue anyway - let user add content manually or use OCR later
+            extractedText = '[No text content extracted from document. Please add content manually or the document may be image-based.]';
+          }
+        } catch (extractError) {
+          console.error('[Upload Knowledge Base] Text extraction failed:', extractError);
+          // If extraction fails but file was uploaded, still allow manual entry
+          extractedText = `[Text extraction failed: ${extractError.message}. Please add content manually.]`;
+          
+          // If addDirectly is true, we should fail since we can't extract content
+          if (formData.addDirectly === 'true') {
+            return res.status(400).send({
+              success: false,
+              error: `Failed to extract text from document: ${extractError.message}. Please try extracting text first or add content manually.`
+            });
+          }
+        }
 
         // Upload file to Storage
         const bucket = getBucket();

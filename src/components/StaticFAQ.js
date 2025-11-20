@@ -1,21 +1,33 @@
 // src/components/StaticFAQ.js
 'use client';
+import { motion } from 'framer-motion';
 import { FaLightbulb, FaBook, FaUsers, FaChartLine } from 'react-icons/fa'; // Example icons
 
 // Helper component for the prompt buttons
-const PromptButton = ({ icon, title, subtitle, onClick }) => (
-  <button
+const PromptButton = ({ icon, title, subtitle, onClick, index }) => (
+  <motion.button
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: index * 0.1, duration: 0.4 }}
+    whileHover={{ scale: 1.05, y: -4 }}
+    whileTap={{ scale: 0.95 }}
     onClick={onClick}
-    className="w-full h-full p-4 text-left text-gray-200 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-gray-700 transition-colors"
+    className="w-full h-full p-5 text-left text-gray-200 bg-gray-700 bg-opacity-50 rounded-xl hover:bg-gray-700 transition-all shadow-lg hover:shadow-xl border border-gray-600/50 hover:border-teal-500/50"
   >
-    <div className="flex items-center gap-3">
-      <span className="text-teal-400">{icon}</span>
+    <div className="flex items-center gap-4">
+      <motion.span
+        whileHover={{ rotate: 360 }}
+        transition={{ duration: 0.5 }}
+        className="text-teal-400 text-2xl"
+      >
+        {icon}
+      </motion.span>
       <div className="flex flex-col">
-        <span className="font-semibold">{title}</span>
+        <span className="font-semibold text-base mb-1">{title}</span>
         <span className="text-sm text-gray-400">{subtitle}</span>
       </div>
     </div>
-  </button>
+  </motion.button>
 );
 
 // This component now accepts a prop: `onQuestionClick`
@@ -46,11 +58,19 @@ export default function StaticFAQ({ onQuestionClick }) {
 
     return (
         <div className="p-6">
-          <h3 className="text-3xl font-bold text-white mb-8 text-center">How can NexusGPT help you today?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <motion.h3
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-3xl font-bold text-white mb-10 text-center"
+          >
+            How can NexusGPT help you today?
+          </motion.h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {questions.map((q, i) => (
                 <PromptButton
                     key={i}
+                    index={i}
                     icon={q.icon}
                     title={q.title}
                     subtitle={q.subtitle}
