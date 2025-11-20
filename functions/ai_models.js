@@ -6,6 +6,7 @@
  */
 const TEXT_GENERATION_MODELS = [
   // Primary: Stable, reliable models first
+  { type: 'openrouter', model: 'x-ai/grok-4.1-fast' },
   { type: 'gemini', model: 'gemini-pro' },
   // Gemini 2.5 series
   { type: 'gemini', model: 'gemini-2.5-flash' },

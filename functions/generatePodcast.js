@@ -2,6 +2,7 @@
 
 const { generateWithFallback } = require("./aiHelper");
 const { generatePodcastAudio } = require("./podcastTTS");
+const { ChatbotRAGRetriever } = require("./chatbotRAGRetriever");
 
 /**
  * Generates a podcast script based on a topic and optional context.
@@ -38,6 +39,79 @@ function createGeneratePodcastHandler(geminiApiKey, openRouterApiKey) {
 
       console.log(`[generatePodcast] Generating podcast for topic: ${topic.substring(0, 100)}`);
 
+      // Use RAG to retrieve relevant knowledge base documents
+      let knowledgeContext = '';
+      let retrievedDocs = [];
+      let ragUsed = false;
+      let ragMetadata = {
+        query: '',
+        documentsFound: 0,
+        topDocuments: [],
+        contextLength: 0,
+        error: null
+      };
+
+      try {
+        // Build query from topic and context
+        const ragQuery = context 
+          ? `${topic}. ${context}`.trim()
+          : topic.trim();
+        
+        ragMetadata.query = ragQuery;
+        console.log(`[generatePodcast] ===== RAG RETRIEVAL START =====`);
+        console.log(`[generatePodcast] Query: "${ragQuery}"`);
+        console.log(`[generatePodcast] Query length: ${ragQuery.length} characters`);
+        
+        const ragRetriever = new ChatbotRAGRetriever();
+        console.log(`[generatePodcast] Initialized ChatbotRAGRetriever`);
+        console.log(`[generatePodcast] Calling retrieveRelevantDocuments with topK=5...`);
+        
+        retrievedDocs = await ragRetriever.retrieveRelevantDocuments(ragQuery, keys, 5); // Get top 5 documents
+        
+        console.log(`[generatePodcast] retrieveRelevantDocuments returned ${retrievedDocs ? retrievedDocs.length : 0} documents`);
+        
+        if (retrievedDocs && retrievedDocs.length > 0) {
+          console.log(`[generatePodcast] Processing ${retrievedDocs.length} retrieved documents...`);
+          
+          // Log each document found
+          retrievedDocs.forEach((doc, idx) => {
+            console.log(`[generatePodcast] Document ${idx + 1}: "${doc.title}" (similarity: ${doc.similarity?.toFixed(4) || 'N/A'}, category: ${doc.category || 'N/A'})`);
+            console.log(`[generatePodcast]   Content preview: ${doc.content?.substring(0, 100) || 'No content'}...`);
+          });
+          
+          knowledgeContext = ragRetriever.buildContextString(retrievedDocs, 3000); // Max 3000 chars
+          ragUsed = true;
+          
+          ragMetadata.documentsFound = retrievedDocs.length;
+          ragMetadata.topDocuments = retrievedDocs.slice(0, 3).map(doc => ({
+            title: doc.title,
+            similarity: doc.similarity,
+            category: doc.category,
+            sourceUrl: doc.sourceUrl
+          }));
+          ragMetadata.contextLength = knowledgeContext.length;
+          
+          console.log(`[generatePodcast] Built context string: ${knowledgeContext.length} characters`);
+          console.log(`[generatePodcast] Context preview (first 200 chars): ${knowledgeContext.substring(0, 200)}...`);
+          console.log(`[generatePodcast] Top match: "${retrievedDocs[0].title}" (similarity: ${retrievedDocs[0].similarity?.toFixed(4) || 'N/A'})`);
+        } else {
+          console.log('[generatePodcast] ⚠️  No relevant documents found in knowledge base');
+          console.log('[generatePodcast] Possible reasons:');
+          console.log('[generatePodcast]   1. Knowledge base collection is empty');
+          console.log('[generatePodcast]   2. Documents exist but have no embeddings');
+          console.log('[generatePodcast]   3. Query similarity is too low');
+          console.log('[generatePodcast] Using static context only');
+          ragMetadata.documentsFound = 0;
+        }
+        
+        console.log(`[generatePodcast] ===== RAG RETRIEVAL END =====`);
+      } catch (ragError) {
+        console.error(`[generatePodcast] ❌ RAG retrieval failed: ${ragError.message}`);
+        console.error(`[generatePodcast] RAG error stack:`, ragError.stack);
+        ragMetadata.error = ragError.message;
+        // Continue without RAG - use static context as fallback
+      }
+
       // Build the podcast generation prompt
       const systemicShiftsContext = `
 PETRONAS Upstream is undergoing a transformation through "Systemic Shifts" - strategic changes in mindset, behavior, and operations to achieve PETRONAS 2.0 vision. Key areas include:
@@ -49,11 +123,26 @@ PETRONAS Upstream is undergoing a transformation through "Systemic Shifts" - str
 - Safety and Risk Management
 `;
 
+      // Build prompt with RAG context prioritized
+      let promptContext = '';
+      
+      if (knowledgeContext) {
+        promptContext = `\n--- KNOWLEDGE BASE INFORMATION (Use this as your primary source of facts) ---\n${knowledgeContext}\n--- END KNOWLEDGE BASE INFORMATION ---\n\n`;
+        console.log(`[generatePodcast] ✓ RAG context included in prompt (${knowledgeContext.length} chars)`);
+      } else {
+        console.log(`[generatePodcast] ⚠️  No RAG context - using static context only`);
+      }
+      
+      if (context) {
+        promptContext += `Additional context provided by user: ${context}\n\n`;
+      }
+      
+      // Add static context as fallback/reference
+      promptContext += `General Context about PETRONAS Upstream and Systemic Shifts:\n${systemicShiftsContext}\n`;
+
       const podcastPrompt = `You are creating an educational podcast script for PETRONAS Upstream employees about: "${topic}"
 
-${context ? `Additional context provided: ${context}\n` : ''}
-
-${systemicShiftsContext}
+${promptContext}
 
 Create a professional, engaging podcast script with the following structure:
 
@@ -86,10 +175,24 @@ Format your response as JSON with this exact structure:
   ]
 }
 
-Make the podcast informative, engaging, and relevant to PETRONAS Upstream operations and Systemic Shifts. Use natural conversation flow, avoid overly technical jargon, and include practical examples where relevant.`;
+Make the podcast informative, engaging, and relevant to PETRONAS Upstream operations and Systemic Shifts. Use natural conversation flow, avoid overly technical jargon, and include practical examples where relevant.
+
+${knowledgeContext ? 'IMPORTANT: Prioritize information from the Knowledge Base section above. Use specific facts, data, and details from the knowledge base documents. If you reference information from the knowledge base, do so naturally in the conversation without explicitly mentioning "according to the knowledge base."' : ''}`;
+
+      // Log prompt details for debugging
+      console.log(`[generatePodcast] ===== PROMPT DETAILS =====`);
+      console.log(`[generatePodcast] Prompt length: ${podcastPrompt.length} characters`);
+      console.log(`[generatePodcast] RAG context included: ${knowledgeContext ? 'YES' : 'NO'}`);
+      if (knowledgeContext) {
+        console.log(`[generatePodcast] RAG context length: ${knowledgeContext.length} characters`);
+      }
+      console.log(`[generatePodcast] Prompt preview (first 500 chars): ${podcastPrompt.substring(0, 500)}...`);
+      console.log(`[generatePodcast] ===== END PROMPT DETAILS =====`);
 
       // Generate podcast content
+      console.log(`[generatePodcast] Calling generateWithFallback to generate podcast...`);
       const podcastJson = await generateWithFallback(podcastPrompt, keys, true);
+      console.log(`[generatePodcast] Received response from LLM (${podcastJson.length} characters)`);
 
       // Parse the JSON response
       let podcastData;
@@ -146,12 +249,32 @@ Make the podcast informative, engaging, and relevant to PETRONAS Upstream operat
         console.warn('[generatePodcast] No script available for audio generation');
       }
 
-      res.status(200).send({
+      // Prepare response with RAG metadata for debugging
+      const response = {
         success: true,
         podcast: podcastData,
         topic: topic.trim(),
-        audioUrl: audioUrl
-      });
+        audioUrl: audioUrl,
+        ragMetadata: {
+          used: ragUsed,
+          documentsFound: ragMetadata.documentsFound,
+          topDocuments: ragMetadata.topDocuments,
+          query: ragMetadata.query,
+          contextLength: ragMetadata.contextLength,
+          error: ragMetadata.error
+        }
+      };
+
+      console.log(`[generatePodcast] ===== RESPONSE SUMMARY =====`);
+      console.log(`[generatePodcast] RAG used: ${ragUsed}`);
+      console.log(`[generatePodcast] Documents found: ${ragMetadata.documentsFound}`);
+      console.log(`[generatePodcast] Context length: ${ragMetadata.contextLength} chars`);
+      if (ragMetadata.topDocuments.length > 0) {
+        console.log(`[generatePodcast] Top documents: ${ragMetadata.topDocuments.map(d => d.title).join(', ')}`);
+      }
+      console.log(`[generatePodcast] ===== END RESPONSE SUMMARY =====`);
+
+      res.status(200).send(response);
 
       } catch (error) {
         console.error("[generatePodcast] Error:", error);

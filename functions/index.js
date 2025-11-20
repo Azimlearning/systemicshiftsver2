@@ -617,3 +617,215 @@ exports.uploadKnowledgeBase = onRequest(
 
 // ✅ 11. Generate Embeddings Function
 exports.generateEmbeddings = require('./generateEmbeddings').generateEmbeddings;
+
+// ✅ 12. Test RAG Retrieval for Podcast Generator
+exports.testPodcastRAG = onRequest(
+  {
+    region: 'us-central1',
+    secrets: [geminiApiKey, openRouterApiKey],
+    timeoutSeconds: 120,
+    memory: '512MiB',
+  },
+  (req, res) => {
+    cors(req, res, async () => {
+      if (req.method !== "POST") {
+        return res.status(405).send({ error: "Method Not Allowed. Use POST." });
+      }
+
+      try {
+        const { topic, context } = req.body;
+
+        if (!topic || typeof topic !== 'string' || !topic.trim()) {
+          return res.status(400).send({ error: "topic (string) is required." });
+        }
+
+        const keys = {
+          gemini: geminiApiKey.value(),
+          openrouter: openRouterApiKey.value()
+        };
+
+        if (!keys.gemini && !keys.openrouter) {
+          return res.status(500).send({ error: "AI API keys not configured." });
+        }
+
+        console.log(`[testPodcastRAG] Testing RAG retrieval for topic: "${topic}"`);
+
+        // Build query from topic and context
+        const ragQuery = context 
+          ? `${topic}. ${context}`.trim()
+          : topic.trim();
+
+        console.log(`[testPodcastRAG] Query: "${ragQuery}"`);
+
+        // Use RAG to retrieve relevant knowledge base documents
+        const { ChatbotRAGRetriever } = require('./chatbotRAGRetriever');
+        const ragRetriever = new ChatbotRAGRetriever();
+        
+        console.log(`[testPodcastRAG] Calling retrieveRelevantDocuments...`);
+        const retrievedDocs = await ragRetriever.retrieveRelevantDocuments(ragQuery, keys, 5);
+        
+        console.log(`[testPodcastRAG] Retrieved ${retrievedDocs ? retrievedDocs.length : 0} documents`);
+
+        // Build context string
+        let knowledgeContext = '';
+        if (retrievedDocs && retrievedDocs.length > 0) {
+          knowledgeContext = ragRetriever.buildContextString(retrievedDocs, 3000);
+        }
+
+        // Check knowledge base collection status
+        const kbSnapshot = await db.collection('knowledgeBase').limit(1).get();
+        const totalDocs = await db.collection('knowledgeBase').count().get();
+        const totalCount = totalDocs.data().count;
+
+        // Check how many have embeddings
+        let docsWithEmbeddings = 0;
+        const sampleDocs = await db.collection('knowledgeBase').limit(10).get();
+        sampleDocs.forEach(doc => {
+          const data = doc.data();
+          if (data.embedding && Array.isArray(data.embedding) && data.embedding.length > 0) {
+            docsWithEmbeddings++;
+          }
+        });
+
+        res.status(200).send({
+          success: true,
+          query: ragQuery,
+          results: {
+            documentsFound: retrievedDocs ? retrievedDocs.length : 0,
+            documents: retrievedDocs ? retrievedDocs.map(doc => ({
+              title: doc.title,
+              similarity: doc.similarity,
+              category: doc.category,
+              sourceUrl: doc.sourceUrl,
+              contentPreview: doc.content ? doc.content.substring(0, 200) : 'No content'
+            })) : [],
+            contextLength: knowledgeContext.length,
+            contextPreview: knowledgeContext.substring(0, 500)
+          },
+          knowledgeBaseStatus: {
+            totalDocuments: totalCount,
+            hasDocuments: !kbSnapshot.empty,
+            sampleDocsWithEmbeddings: docsWithEmbeddings,
+            sampleSize: sampleDocs.size
+          }
+        });
+
+      } catch (error) {
+        console.error("[testPodcastRAG] Error:", error);
+        res.status(500).send({
+          error: "Failed to test RAG retrieval",
+          message: error.message,
+          stack: error.stack
+        });
+      }
+    });
+  }
+);
+
+// ✅ MeetX: Process Meeting File
+const { processMeetingFile } = require('./meetxProcessor');
+exports.processMeetingFile = onRequest(
+  { region: "us-central1", secrets: [geminiApiKey, openRouterApiKey], timeoutSeconds: 300, memory: "1GiB" },
+  (req, res) => {
+    cors(req, res, async () => {
+      if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+
+      try {
+        const { fileUrl, fileName, fileType } = req.body;
+
+        if (!fileUrl || !fileName) {
+          return res.status(400).send({ error: "fileUrl and fileName are required" });
+        }
+
+        const extractedText = await processMeetingFile(fileUrl, fileName, fileType);
+
+        res.status(200).send({
+          success: true,
+          extractedText,
+          fileName,
+          fileType
+        });
+      } catch (error) {
+        console.error("[processMeetingFile] Error:", error);
+        res.status(500).send({
+          error: "Failed to process file",
+          message: error.message
+        });
+      }
+    });
+  }
+);
+
+// ✅ MeetX: Generate Meeting Insights
+const { generateMeetingInsights } = require('./meetxProcessor');
+exports.generateMeetingInsights = onRequest(
+  { region: "us-central1", secrets: [geminiApiKey, openRouterApiKey], timeoutSeconds: 540, memory: "2GiB" },
+  (req, res) => {
+    cors(req, res, async () => {
+      if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+
+      try {
+        const { meetingId, content, title } = req.body;
+
+        if (!meetingId || !content) {
+          return res.status(400).send({ error: "meetingId and content are required" });
+        }
+
+        const keys = {
+          gemini: geminiApiKey.value(),
+          openrouter: openRouterApiKey.value()
+        };
+
+        const insights = await generateMeetingInsights(meetingId, content, title || "Untitled Meeting", keys);
+
+        res.status(200).send({
+          success: true,
+          insights
+        });
+      } catch (error) {
+        console.error("[generateMeetingInsights] Error:", error);
+        res.status(500).send({
+          error: "Failed to generate insights",
+          message: error.message
+        });
+      }
+    });
+  }
+);
+
+// ✅ MeetX: Chat with Organization
+const { chatWithOrg } = require('./meetxAI');
+exports.chatWithOrg = onRequest(
+  { region: "us-central1", secrets: [geminiApiKey, openRouterApiKey], timeoutSeconds: 300, memory: "1GiB" },
+  (req, res) => {
+    cors(req, res, async () => {
+      if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+
+      try {
+        const { query } = req.body;
+
+        if (!query || typeof query !== 'string') {
+          return res.status(400).send({ error: "query is required and must be a string" });
+        }
+
+        const keys = {
+          gemini: geminiApiKey.value(),
+          openrouter: openRouterApiKey.value()
+        };
+
+        const result = await chatWithOrg(query, keys);
+
+        res.status(200).send({
+          success: true,
+          ...result
+        });
+      } catch (error) {
+        console.error("[chatWithOrg] Error:", error);
+        res.status(500).send({
+          error: "Failed to process chat query",
+          message: error.message
+        });
+      }
+    });
+  }
+);
