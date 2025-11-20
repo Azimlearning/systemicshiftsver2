@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaPodcast, FaDownload, FaSpinner, FaPlay, FaPause } from 'react-icons/fa';
 
 export default function PodcastGenerator() {
@@ -12,8 +12,19 @@ export default function PodcastGenerator() {
   const [error, setError] = useState('');
   const [playing, setPlaying] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
+  const [audioElement, setAudioElement] = useState(null);
 
   const generatePodcastUrl = 'https://generatepodcast-el2jwxb5bq-uc.a.run.app'; // Will be updated after deployment
+
+  // Cleanup audio element on unmount
+  useEffect(() => {
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+      }
+    };
+  }, [audioElement]);
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -25,6 +36,14 @@ export default function PodcastGenerator() {
     setProgress('Generating podcast outline...');
     setError('');
     setPodcast(null);
+    // Clean up previous audio element
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.src = '';
+      setAudioElement(null);
+    }
+    setAudioUrl(null);
+    setPlaying(false);
 
     try {
       const response = await fetch(generatePodcastUrl, {
@@ -51,6 +70,12 @@ export default function PodcastGenerator() {
         setProgress('Podcast generated successfully!');
         if (data.audioUrl) {
           setAudioUrl(data.audioUrl);
+          // Create audio element for playback
+          const audio = new Audio(data.audioUrl);
+          audio.addEventListener('ended', () => setPlaying(false));
+          audio.addEventListener('pause', () => setPlaying(false));
+          audio.addEventListener('play', () => setPlaying(true));
+          setAudioElement(audio);
         }
       } else {
         throw new Error(data.error || 'Failed to generate podcast');
@@ -210,17 +235,15 @@ export default function PodcastGenerator() {
                   <FaDownload />
                   JSON
                 </button>
-                {audioUrl && (
+                {audioUrl && audioElement && (
                   <>
                     <button
                       onClick={() => {
-                        const audio = new Audio(audioUrl);
                         if (playing) {
-                          audio.pause();
+                          audioElement.pause();
                         } else {
-                          audio.play();
+                          audioElement.play();
                         }
-                        setPlaying(!playing);
                       }}
                       className="bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors hover:bg-orange-700 flex items-center gap-2"
                     >
