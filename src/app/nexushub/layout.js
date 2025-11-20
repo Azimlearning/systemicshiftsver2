@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaThList, FaImages, FaBoxOpen } from 'react-icons/fa'; // Icons
+import { FaHome, FaThList, FaImages, FaBoxOpen, FaVideo } from 'react-icons/fa'; // Icons
 import Header from '../../components/Header'; // <-- 1. MAIN NAV FOR CONSISTENCY
 import Footer from '../../components/Footer';
 
@@ -51,11 +51,15 @@ export default function NexusHubLayout({ children }) {
               </SideNavLink>
               <SideNavLink href="/nexushub/upg">
                 <FaImages />
-                UpG (WIP)
+                UpG
               </SideNavLink>
               <SideNavLink href="/nexushub/dropbox">
                 <FaThList />
                 Systemic Shifts Dropbox
+              </SideNavLink>
+              <SideNavLink href="/nexushub/uflix">
+                <FaVideo />
+                Uflix
               </SideNavLink>
             </nav>
           </aside>

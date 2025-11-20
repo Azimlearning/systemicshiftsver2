@@ -1,0 +1,87 @@
+For Internal Use - For Internal Distribution Only
+
+Real Time Optimisation Through IAM Innovation
+Upstream surveillance has entered a new era.
+With Integrated Asset Management (IAM), teams are no longer bound by static
+monitoring or delayed insights. They now operate in real time, making faster and
+smarter decisions powered by live data and intelligent workflows.
+This is not just a technology upgrade—it is a step change in how wells are
+understood, managed, and optimised.
+
+Overcoming Challenges at Kinabalu
+IAM has been deployed across multiple fields, including recent applications at
+KNNAG wells B07L, B07S, and B06T, where it helped address long standing
+surveillance challenges:
+•
+
+KNNAG B07S: Slow ramp up due to water coning risk
+
+•
+
+KNNAG B07L: Controlled ramp up to prevent proppant production
+
+•
+
+Persistent metering mismatch: Discrepancy between production data and
+export meter readings despite multiple recalibrations
+
+These challenges once limited operational confidence and delayed decision making.
+IAM turned that around.
+
+How IAM Changed the Game
+From static to dynamic monitoring
+IAM integrated Active Well Surveillance (AWS) and Pressure Downhole Gauge (PDG) data
+to enable real time well configuration, replacing manual and reactive practices.
+From estimates to validated rates
+Using the Vertical Lift Performance (VLP) method, IAM resolved mismatches between
+production and export readings, ensuring accuracy and reliability.
+From single point to multipoint validation
+The Multiphase Flow Meter (MPFM) Validation Workflow compared wellhead gas meter data
+with Flowing Tubing Head Pressure (FTHP) and PDG pressure readings, improving
+confidence in bean up decisions.
+From delayed response to early action
+Live validation during operations helped detect water coning earlier, reducing risks and
+capturing additional gains.
+
+IAM-Driven Enhancements
+•
+
+Real time well rate estimation using AWS, and PDG enabled accurate export meter
+matching, unlocking 3 MMSCFD from KNNAG B06T
+
+For Internal Use - For Internal Distribution Only
+
+•
+
+MPFM validation workflow identified KNNAG B07S for further bean up, with live
+Wellhead Gas Meter (WGM) monitoring during execution
+
+•
+
+Ramp up strategies for B07S and B07L were optimised to mitigate water
+coning and proppant production risks, improving zone contribution
+
+The results speak for themselves:
+•
+
+23 MMSCFD in additional gas production
+
+•
+
+1 KBOED from the most productive condensate line up identified through IAM
+
+•
+
+Greater precision and confidence in surveillance and decision making
+
+IAM has proven to be more than a modelling tool. It is a strategic enabler that drives
+operational excellence.
+
+What’s Next
+The next step is clear: scaling IAM across all PCSB assets.
+This will transform surveillance into a proactive, predictive, and performance driven
+discipline, setting a new benchmark for upstream operations.
+The future of optimisation is here.
+And it is happening in real time.
+
+
