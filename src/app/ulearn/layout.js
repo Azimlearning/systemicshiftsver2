@@ -19,6 +19,7 @@ export default function UlearnLayout({ children }) {
     { name: 'Overview', href: '/ulearn' },
     { name: 'Quizzes', href: '/ulearn/quizzes' },
     { name: 'AI Podcast Generator', href: '/ulearn/podcast' },
+    { name: 'My Podcasts', href: '/ulearn/podcast/my-podcasts' },
   ];
 
   return (

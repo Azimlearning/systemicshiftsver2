@@ -36,13 +36,17 @@ exports.generateEmbeddings = require('firebase-functions/v2/https').onRequest(
           openrouter: openRouterApiKey.value()
         };
 
+        // Check if force regeneration is requested
+        const forceRegenerate = req.query.force === 'true' || (req.body && req.body.force === true);
+
         const ragRetriever = new ChatbotRAGRetriever();
-        const processed = await ragRetriever.generateAllEmbeddings(keys, 10);
+        const processed = await ragRetriever.generateAllEmbeddings(keys, 10, forceRegenerate);
 
         res.status(200).send({
           success: true,
           message: `Successfully generated embeddings for ${processed} documents`,
           processed: processed,
+          forceRegenerate: forceRegenerate,
         });
 
       } catch (error) {

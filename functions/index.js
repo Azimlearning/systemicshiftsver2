@@ -616,5 +616,4 @@ exports.uploadKnowledgeBase = onRequest(
 );
 
 // ✅ 11. Generate Embeddings Function
-const { generateEmbeddings } = require('./generateEmbeddings');
-exports.generateEmbeddings = generateEmbeddings;
+exports.generateEmbeddings = require('./generateEmbeddings').generateEmbeddings;

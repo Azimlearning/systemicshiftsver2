@@ -5,13 +5,10 @@
  * Used for semantic search in RAG implementation
  */
 
-const fetch = (async () => {
-  try {
-    return (await import('node-fetch')).default;
-  } catch {
-    return require('node-fetch');
-  }
-})();
+// Import node-fetch for Node.js environments
+// node-fetch v2.7.0 is CommonJS, so we use require
+const nodeFetch = require('node-fetch');
+const fetch = nodeFetch;
 
 // OpenAI Embeddings API endpoint
 const OPENAI_EMBEDDINGS_URL = 'https://api.openai.com/v1/embeddings';

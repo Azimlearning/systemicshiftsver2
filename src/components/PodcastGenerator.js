@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaPodcast, FaDownload, FaSpinner, FaPlay, FaPause } from 'react-icons/fa';
+import { FaPodcast, FaDownload, FaSpinner, FaPlay, FaPause, FaSave, FaCheck } from 'react-icons/fa';
+import { db } from '../lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function PodcastGenerator() {
   const [topic, setTopic] = useState('');
@@ -13,6 +15,9 @@ export default function PodcastGenerator() {
   const [playing, setPlaying] = useState(false);
   const [audioUrl, setAudioUrl] = useState(null);
   const [audioElement, setAudioElement] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [savedPodcastId, setSavedPodcastId] = useState(null);
 
   const generatePodcastUrl = 'https://generatepodcast-el2jwxb5bq-uc.a.run.app'; // Will be updated after deployment
 
@@ -44,6 +49,8 @@ export default function PodcastGenerator() {
     }
     setAudioUrl(null);
     setPlaying(false);
+    setSaved(false);
+    setSavedPodcastId(null);
 
     try {
       const response = await fetch(generatePodcastUrl, {
@@ -143,6 +150,44 @@ export default function PodcastGenerator() {
     document.body.removeChild(a);
   };
 
+  const handleSavePodcast = async () => {
+    if (!podcast || !topic.trim()) {
+      setError('No podcast to save.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+
+    try {
+      // Get user identifier from sessionStorage or use anonymous
+      const userId = typeof window !== 'undefined' 
+        ? (sessionStorage.getItem('isLoggedIn') === 'true' ? 'authenticated' : 'anonymous')
+        : 'anonymous';
+
+      const podcastData = {
+        topic: topic.trim(),
+        context: context.trim() || '',
+        outline: podcast.outline || '',
+        script: podcast.script || '',
+        sections: podcast.sections || [],
+        audioUrl: audioUrl || '',
+        createdAt: serverTimestamp(),
+        userId: userId
+      };
+
+      const docRef = await addDoc(collection(db, 'podcasts'), podcastData);
+      setSavedPodcastId(docRef.id);
+      setSaved(true);
+      console.log('Podcast saved with ID:', docRef.id);
+    } catch (err) {
+      console.error('Error saving podcast:', err);
+      setError('Failed to save podcast. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="bg-white p-6 rounded-lg shadow-lg">
       <h2 className="text-3xl font-semibold text-gray-800 mb-6 border-b pb-2 flex items-center gap-3">
@@ -219,6 +264,33 @@ export default function PodcastGenerator() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-2xl font-bold text-gray-800">Generated Podcast</h3>
               <div className="flex gap-2">
+                <button
+                  onClick={handleSavePodcast}
+                  disabled={saving || saved}
+                  className={`font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 ${
+                    saved
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed'
+                  }`}
+                  title={saved ? 'Podcast saved!' : 'Save podcast to your library'}
+                >
+                  {saving ? (
+                    <>
+                      <FaSpinner className="animate-spin" />
+                      Saving...
+                    </>
+                  ) : saved ? (
+                    <>
+                      <FaCheck />
+                      Saved
+                    </>
+                  ) : (
+                    <>
+                      <FaSave />
+                      Save
+                    </>
+                  )}
+                </button>
                 <button
                   onClick={handleDownloadText}
                   className="bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors hover:bg-teal-700 flex items-center gap-2"

@@ -151,28 +151,53 @@ class ChatbotRAGRetriever {
    * Generate embeddings for all documents in knowledge base (batch operation)
    * @param {object} keys - API keys
    * @param {number} batchSize - Number of documents to process at once
+   * @param {boolean} forceRegenerate - Force regeneration even if embedding exists
    * @returns {Promise<number>} Number of documents processed
    */
-  async generateAllEmbeddings(keys, batchSize = 10) {
+  async generateAllEmbeddings(keys, batchSize = 10, forceRegenerate = false) {
     try {
       const db = getDb();
       const snapshot = await db.collection('knowledgeBase').get();
       let processed = 0;
+      let skipped = 0;
+      let errors = 0;
       let batch = db.batch();
       let batchCount = 0;
+
+      console.log(`[ChatbotRAG] Found ${snapshot.docs.length} documents in knowledge base`);
 
       for (const doc of snapshot.docs) {
         const docData = doc.data();
         
-        // Skip if embedding already exists and is recent
-        if (docData.embedding && Array.isArray(docData.embedding) && docData.embedding.length > 0) {
-          console.log(`[ChatbotRAG] Skipping ${doc.id} - embedding already exists`);
+        // Skip if embedding already exists (unless forcing regeneration)
+        if (!forceRegenerate && docData.embedding && Array.isArray(docData.embedding) && docData.embedding.length > 0) {
+          skipped++;
+          continue;
+        }
+
+        // Validate required fields
+        if (!docData.title || !docData.content) {
+          console.warn(`[ChatbotRAG] Skipping ${doc.id} - missing title or content`);
+          errors++;
           continue;
         }
 
         try {
           const text = `${docData.title}\n${docData.content}`.substring(0, 8000);
+          if (!text || text.trim().length === 0) {
+            console.warn(`[ChatbotRAG] Skipping ${doc.id} - empty text`);
+            errors++;
+            continue;
+          }
+
+          console.log(`[ChatbotRAG] Generating embedding for ${doc.id}: "${docData.title}"`);
           const embedding = await generateEmbedding(text, keys);
+          
+          if (!embedding || !Array.isArray(embedding) || embedding.length === 0) {
+            console.error(`[ChatbotRAG] Invalid embedding returned for ${doc.id}`);
+            errors++;
+            continue;
+          }
           
           batch.update(doc.ref, {
             embedding: embedding,
@@ -187,13 +212,14 @@ class ChatbotRAGRetriever {
             await batch.commit();
             batch = db.batch();
             batchCount = 0;
-            console.log(`[ChatbotRAG] Processed ${processed} documents...`);
+            console.log(`[ChatbotRAG] Processed ${processed} documents (skipped: ${skipped}, errors: ${errors})...`);
             
             // Small delay to avoid rate limiting
             await new Promise(resolve => setTimeout(resolve, 500));
           }
         } catch (error) {
-          console.error(`[ChatbotRAG] Error processing ${doc.id}:`, error.message);
+          console.error(`[ChatbotRAG] Error processing ${doc.id}:`, error.message, error.stack);
+          errors++;
         }
       }
 
@@ -202,7 +228,7 @@ class ChatbotRAGRetriever {
         await batch.commit();
       }
 
-      console.log(`[ChatbotRAG] Generated embeddings for ${processed} documents`);
+      console.log(`[ChatbotRAG] Generated embeddings for ${processed} documents (skipped: ${skipped}, errors: ${errors})`);
       return processed;
 
     } catch (error) {
