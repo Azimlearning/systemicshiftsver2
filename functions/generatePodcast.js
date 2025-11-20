@@ -1,6 +1,7 @@
 // functions/generatePodcast.js
 
 const { generateWithFallback } = require("./aiHelper");
+const { generatePodcastAudio } = require("./podcastTTS");
 
 /**
  * Generates a podcast script based on a topic and optional context.
@@ -126,10 +127,30 @@ Make the podcast informative, engaging, and relevant to PETRONAS Upstream operat
 
       console.log(`[generatePodcast] Successfully generated podcast with ${podcastData.sections.length} sections`);
 
+      // Generate audio from the script
+      let audioUrl = null;
+      if (podcastData.script) {
+        try {
+          console.log('[generatePodcast] Starting audio generation...');
+          console.log(`[generatePodcast] Script length: ${podcastData.script.length} characters`);
+          audioUrl = await generatePodcastAudio(podcastData.script, topic.trim());
+          console.log(`[generatePodcast] Audio generated successfully: ${audioUrl}`);
+        } catch (audioError) {
+          console.error('[generatePodcast] Audio generation failed:', audioError);
+          console.error('[generatePodcast] Audio error stack:', audioError.stack);
+          // Continue without audio - script generation was successful
+          // Audio generation failure should not fail the entire request
+          // But log the error for debugging
+        }
+      } else {
+        console.warn('[generatePodcast] No script available for audio generation');
+      }
+
       res.status(200).send({
         success: true,
         podcast: podcastData,
-        topic: topic.trim()
+        topic: topic.trim(),
+        audioUrl: audioUrl
       });
 
       } catch (error) {
