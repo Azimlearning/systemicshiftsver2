@@ -14,8 +14,11 @@
         "npm --prefix \"$RESOURCE_DIR\" run lint"
       ],
       "runtime": "nodejs20"
-    },
-    {
+    }
+    // Temporarily disabled chat codebase due to version conflict
+    // Uncomment below to re-enable chat functions
+    /*
+    ,{
       "source": "functions/chat",
       "codebase": "chat",
       "ignore": [
@@ -26,8 +29,12 @@
         "*.local"
       ],
       "runtime": "nodejs20"
-    },
-    {
+    }
+    */
+    // Temporarily disabled Python codebase to avoid deployment timeout
+    // Uncomment below to re-enable Python functions
+    /*
+    ,{
       "source": "functions-python",
       "codebase": "python",
       "ignore": [
@@ -41,5 +48,6 @@
       ],
       "runtime": "python311"
     }
+    */
   ]
 }
