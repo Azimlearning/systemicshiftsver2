@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -17,10 +18,13 @@ export default function LoginPage() {
   // --- END CORRECTION ---
 
   useEffect(() => {
+    if (typeof window === 'undefined' || isNavigating) return;
+    
     if (sessionStorage.getItem('isLoggedIn') === 'true') {
+      setIsNavigating(true);
       router.push(redirectUrl);
     }
-  }, [router, redirectUrl]);
+  }, [router, redirectUrl, isNavigating]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -31,6 +35,7 @@ export default function LoginPage() {
 
     if (username === correctUsername && password === correctPassword) {
       sessionStorage.setItem('isLoggedIn', 'true');
+      setIsNavigating(true);
       router.push(redirectUrl);
     } else {
       setError('Invalid username or password.');

@@ -14,6 +14,7 @@ export default function SystemicShiftsDropbox() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(null); // Track which submission's menu is open
 
@@ -51,7 +52,7 @@ export default function SystemicShiftsDropbox() {
   const pageSnapshotsRef = useRef({});
   
   // Simple fetch function using getDocs (like old code)
-  const fetchSubmissions = async (pageDirection = 'first', targetPageNum = null) => {
+  const fetchSubmissions = async (pageDirection = 'first', targetPageNum = null, retryCount = 0) => {
     setLoading(true);
     setError('');
     
@@ -184,15 +185,19 @@ export default function SystemicShiftsDropbox() {
 
     } catch (err) {
       console.error("Error fetching submissions:", err);
-      setError('Failed to load submissions.');
-    } finally {
-      setLoading(false);
+      if (retryCount < 2) {
+        // Retry after 1 second
+        setTimeout(() => fetchSubmissions(pageDirection, targetPageNum, retryCount + 1), 1000);
+      } else {
+        setError('Failed to load submissions. Please refresh the page.');
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     // Check login status on client side only (avoids hydration mismatch)
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isNavigating) return;
     
     const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
     
@@ -201,6 +206,7 @@ export default function SystemicShiftsDropbox() {
     setIsLoggedIn(loggedIn);
     
     if (!loggedIn) {
+      setIsNavigating(true);
       router.push('/login?redirect=/nexushub/dropbox');
       return;
     }
@@ -208,7 +214,7 @@ export default function SystemicShiftsDropbox() {
     // Fetch initial submissions
     fetchSubmissions('first');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, isNavigating]);
 
   // Close download menu when clicking outside
   useEffect(() => {

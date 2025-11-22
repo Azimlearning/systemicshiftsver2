@@ -1,77 +1,66 @@
 // src/app/nexushub/layout.js
-'use client'; // This layout uses hooks (usePathname)
+'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FaHome, FaThList, FaImages, FaBoxOpen, FaVideo } from 'react-icons/fa'; // Icons
-import Header from '../../components/Header'; // <-- 1. MAIN NAV FOR CONSISTENCY
+import Link from 'next/link';
+import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 
-// Helper component for the nav links
-const SideNavLink = ({ href, children }) => {
-  const pathname = usePathname();
-  const isActive = pathname === href;
-
-  return (
-    <Link
-      href={href}
-      className={`
-        flex items-center gap-3 px-4 py-3 text-sm font-medium
-        rounded-md transition-colors
-        ${isActive
-          ? 'bg-teal-600 text-white' // Active style
-          : 'text-gray-700 hover:bg-gray-100' // Inactive style
-        }
-      `}
-    >
-      {children}
-    </Link>
-  );
-};
-
+/**
+ * NexusHub Layout with Second-Level Navigation
+ * 
+ * This layout provides a second-level navigation bar that appears when
+ * users are within the NexusHub section, matching the Systemic Shifts
+ * navigation pattern.
+ */
 export default function NexusHubLayout({ children }) {
+  const pathname = usePathname();
+
+  const nexusHubNavItems = [
+    { name: 'Overview', href: '/nexushub' },
+    { name: 'Collaterals', href: '/nexushub/collaterals' },
+    { name: 'UpstreamGallery', href: '/nexushub/upg' },
+    { name: 'Systemic Shifts Dropbox', href: '/nexushub/dropbox' },
+    { name: 'Uflix', href: '/nexushub/uflix' },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-      <Header /> {/* <-- Your main site header is here */}
-
-      <div className="flex-grow">
-        {/* Main content area with side nav */}
-        <div className="container mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
-          
-          {/* --- 2. THE NEW SIDE NAVBAR --- */}
-          <aside className="w-full lg:w-64 flex-shrink-0 bg-white p-6 rounded-lg shadow-lg mb-6 lg:mb-0">
-            <nav className="flex flex-col gap-2">
-              <SideNavLink href="/nexushub">
-                <FaHome />
-                Overview
-              </SideNavLink>
-              <SideNavLink href="/nexushub/collaterals">
-                <FaBoxOpen />
-                Collaterals
-              </SideNavLink>
-              <SideNavLink href="/nexushub/upg">
-                <FaImages />
-                UpG
-              </SideNavLink>
-              <SideNavLink href="/nexushub/dropbox">
-                <FaThList />
-                Systemic Shifts Dropbox
-              </SideNavLink>
-              <SideNavLink href="/nexushub/uflix">
-                <FaVideo />
-                Uflix
-              </SideNavLink>
-            </nav>
-          </aside>
-          {/* --- END SIDE NAVBAR --- */}
-
-          {/* Content Area */}
-          <main className="flex-1">
-            {children} {/* This is where your pages will render */}
-          </main>
+    <div className="min-h-screen bg-gray-100 font-sans flex flex-col">
+      <Header />
+      
+      {/* Second-Level Navigation Bar - Only visible in NexusHub section */}
+      <div className="sticky top-16 md:top-20 z-40 w-full bg-white border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4">
+          <nav className="flex items-center gap-1 md:gap-2 overflow-x-auto py-3">
+            {nexusHubNavItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`
+                    px-4 py-2 text-sm font-medium whitespace-nowrap
+                    transition-colors duration-200 rounded-md
+                    ${isActive
+                      ? 'bg-teal-50 text-teal-700 border-b-2 border-teal-600'
+                      : 'text-gray-600 hover:text-teal-700 hover:bg-teal-50'
+                    }
+                  `}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       </div>
 
+      <main className="flex-grow relative z-10">
+        <div className="container mx-auto px-4 py-8">
+          {children}
+        </div>
+      </main>
+      
       <Footer />
     </div>
   );

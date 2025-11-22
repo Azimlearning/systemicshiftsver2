@@ -30,7 +30,7 @@ export default function MindsetBehaviour() {
         id: 'learning',
         title: "Leaders Role Model a Learning Attitude.",
         description: "Openly reflect on mistakes, share learning journeys, and show humility in not knowing everything while reframe setbacks as growth opportunities.",
-        image: "/mindset-risk-tolerant-content.png" // Placeholder - will need actual role images
+        image: "/SystemicShiftsDiagrams_pages/mindset-risk-tolerant-content.png"
       },
       {
         id: 'feedback',
@@ -59,19 +59,19 @@ export default function MindsetBehaviour() {
         id: 'strategy',
         title: "Leaders to Set a Clear Value-Driven Strategy.",
         description: "Define and communicate where the business wins and how value is created. Focus resources on what drives growth or efficiency and stop low-value work.",
-        image: "/mindset-commercial-savvy-content.png" // Placeholder
+        image: "/SystemicShiftsDiagrams_pages/mindset-commercial-savvy-content.png"
       },
       {
         id: 'tradeoffs',
         title: "Make Smart Trade-Offs and Opportunity Oriented.",
         description: "Prioritise work that has the highest impact, find efficiencies, eliminate waste, suggest ways to grow and avoid perfectionism in low-value areas.",
-        image: "/mindset-commercial-savvy-content.png" // Placeholder
+        image: "/SystemicShiftsDiagrams_pages/mindset-commercial-savvy-content.png"
       },
       {
         id: 'owner',
         title: "Act Like an Owner.",
         description: "Develop business acumen in team, coach and mentor team to understand value chain and think beyond their function.",
-        image: "/mindset-commercial-savvy-content.png" // Placeholder
+        image: "/SystemicShiftsDiagrams_pages/mindset-commercial-savvy-content.png"
       }
     ]
   };
@@ -88,19 +88,19 @@ export default function MindsetBehaviour() {
         id: 'risk-taking',
         title: "Leaders to Role Model a Risk-Taking Attitude.",
         description: "Leaders to demonstrate bold and transparent decisions by showing how calculated risks are evaluated/taken.",
-        image: "/mindset-growth-mindset-content.png" // Placeholder
+        image: "/SystemicShiftsDiagrams_pages/mindset-growth-mindset-content.png"
       },
       {
         id: 'speak-up',
         title: "Encourage Speak Up with Ideas.",
         description: "Encourage openness, accept honest mistakes, and protect those who take initiative by recognising both success and effort in experimentation and celebrate smart failures.",
-        image: "/mindset-growth-mindset-content.png" // Placeholder
+        image: "/SystemicShiftsDiagrams_pages/mindset-growth-mindset-content.png"
       },
       {
         id: 'support',
         title: "Support Peers in Trying.",
         description: "Encourage teammates to take initiative, and create a safe space for experimentation.",
-        image: "/mindset-growth-mindset-content.png" // Placeholder
+        image: "/SystemicShiftsDiagrams_pages/mindset-growth-mindset-content.png"
       }
     ]
   };

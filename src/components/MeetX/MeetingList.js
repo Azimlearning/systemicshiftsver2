@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
-import { collection, getDocs, query, where, orderBy, deleteDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, limit, deleteDoc, doc } from 'firebase/firestore';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaEye, FaFileAlt } from 'react-icons/fa';
 
 export default function MeetingList({ onCreateMeeting, onViewMeeting, onEditMeeting, defaultFilter = 'all' }) {
@@ -43,11 +43,12 @@ export default function MeetingList({ onCreateMeeting, onViewMeeting, onEditMeet
           orderBy('createdAt', 'desc')
         );
       } else {
-        // Get all meetings user can see
+        // Get all meetings user can see (with limit for performance)
+        const MEETINGS_LIMIT = 100; // Reasonable limit for display
         const [myMeetings, sharedMeetings, publicMeetings] = await Promise.all([
-          getDocs(query(collection(db, 'meetings'), where('createdBy', '==', userId), orderBy('createdAt', 'desc'))),
-          getDocs(query(collection(db, 'meetings'), where('sharedWith', 'array-contains', userId), orderBy('createdAt', 'desc'))),
-          getDocs(query(collection(db, 'meetings'), where('isPublic', '==', true), orderBy('createdAt', 'desc')))
+          getDocs(query(collection(db, 'meetings'), where('createdBy', '==', userId), orderBy('createdAt', 'desc'), limit(MEETINGS_LIMIT))),
+          getDocs(query(collection(db, 'meetings'), where('sharedWith', 'array-contains', userId), orderBy('createdAt', 'desc'), limit(MEETINGS_LIMIT))),
+          getDocs(query(collection(db, 'meetings'), where('isPublic', '==', true), orderBy('createdAt', 'desc'), limit(MEETINGS_LIMIT)))
         ]);
 
         const allMeetings = [];
