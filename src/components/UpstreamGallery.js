@@ -16,6 +16,7 @@ export default function UpstreamGallery() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
 
   // Pagination State
@@ -39,7 +40,7 @@ export default function UpstreamGallery() {
   });
 
   // Fetch images function
-  const fetchImages = async (pageDirection = 'first', targetPageNum = null) => {
+  const fetchImages = async (pageDirection = 'first', targetPageNum = null, retryCount = 0) => {
     setLoading(true);
     setError('');
 
@@ -176,9 +177,13 @@ export default function UpstreamGallery() {
 
     } catch (err) {
       console.error("Error fetching images:", err);
-      setError('Failed to load images.');
-    } finally {
-      setLoading(false);
+      if (retryCount < 2) {
+        // Retry after 1 second
+        setTimeout(() => fetchImages(pageDirection, targetPageNum, retryCount + 1), 1000);
+      } else {
+        setError('Failed to load images. Please refresh the page.');
+        setLoading(false);
+      }
     }
   };
 
@@ -192,19 +197,20 @@ export default function UpstreamGallery() {
 
   // Initial load and login check
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || isNavigating) return;
 
     const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
     setIsLoggedIn(loggedIn);
 
     if (!loggedIn) {
+      setIsNavigating(true);
       router.push('/login?redirect=/nexushub/upg');
       return;
     }
 
     fetchImages('first');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, isNavigating]);
 
   // Handle file input change
   const handleFileChange = (e) => {

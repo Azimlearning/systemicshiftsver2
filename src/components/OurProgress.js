@@ -94,7 +94,7 @@ export default function OurProgress() {
                   className="w-full flex items-center justify-center"
                 >
                   <Image
-                    src="/progress-q1-content.png"
+                    src="/SystemicShiftsDiagrams_pages/progress-q1-content.png"
                     alt="Q1 2025 Progress Milestones & Achievements"
                     width={1200}
                     height={1800}

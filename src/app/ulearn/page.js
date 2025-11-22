@@ -1,15 +1,15 @@
 // src/app/ulearn/page.js
-'use client';
 
 import Link from 'next/link';
 import { FaQuestionCircle, FaPodcast, FaGraduationCap } from 'react-icons/fa';
+import FadeInWhenVisible from '../../components/animations/FadeInWhenVisible';
 
-const UlearnLanding = () => (
+const ULearnLanding = () => (
   <div className="bg-white p-12 rounded-lg shadow-lg">
     <div className="text-center mb-8">
       <h2 className="text-4xl font-extrabold text-teal-700 mb-4 flex items-center justify-center gap-3">
         <FaGraduationCap />
-        Welcome to Ulearn
+        Welcome to ULearn
       </h2>
       <p className="text-xl text-gray-600">
         Your educational hub for learning about Systemic Shifts and Upstream operations.
@@ -54,7 +54,13 @@ const UlearnLanding = () => (
   </div>
 );
 
-export default function UlearnPage() {
-  return <UlearnLanding />;
+export default function ULearnPage() {
+  return (
+    <FadeInWhenVisible key="ulearn-overview">
+      <section id="ulearn-overview">
+        <ULearnLanding />
+      </section>
+    </FadeInWhenVisible>
+  );
 }
 

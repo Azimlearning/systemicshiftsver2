@@ -20,21 +20,21 @@ import { FaBars, FaTimes, FaChevronDown } from 'react-icons/fa';
 export default function Header() {
   const [isSystemicShiftsOpen, setIsSystemicShiftsOpen] = useState(false);
   const [isUlearnOpen, setIsUlearnOpen] = useState(false);
-  const [isMeetXOpen, setIsMeetXOpen] = useState(false);
+  const [isNexusHubOpen, setIsNexusHubOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const systemicShiftsDropdownRef = useRef(null);
   const ulearnDropdownRef = useRef(null);
-  const meetXDropdownRef = useRef(null);
+  const nexusHubDropdownRef = useRef(null);
   const pathname = usePathname();
 
   // Check if we're in the Systemic Shifts section
   const isInSystemicShifts = pathname?.startsWith('/systemic-shifts');
   
-  // Check if we're in the Ulearn section
+  // Check if we're in the ULearn section
   const isInUlearn = pathname?.startsWith('/ulearn');
   
-  // Check if we're in the MeetX section
-  const isInMeetX = pathname?.startsWith('/meetx');
+  // Check if we're in the NexusHub section
+  const isInNexusHub = pathname?.startsWith('/nexushub');
 
   // Navigation items structure
   const navItems = [
@@ -53,7 +53,7 @@ export default function Header() {
     },
     { name: 'Articles', href: '/articles', type: 'link' },
     { 
-      name: 'Ulearn', 
+      name: 'ULearn', 
       href: '/ulearn', 
       type: 'dropdown',
       subItems: [
@@ -63,17 +63,19 @@ export default function Header() {
       ]
     },
     { name: 'StatsX', href: '/statsx', type: 'link' },
+    { name: 'MeetX', href: '/meetx', type: 'link' },
     { 
-      name: 'MeetX', 
-      href: '/meetx', 
+      name: 'NexusHub', 
+      href: '/nexushub', 
       type: 'dropdown',
       subItems: [
-        { name: 'My Meetings', href: '/meetx' },
-        { name: 'Shared with Me', href: '/meetx/shared' },
-        { name: 'AI Insights', href: '/meetx/insights' },
+        { name: 'Overview', href: '/nexushub' },
+        { name: 'Collaterals', href: '/nexushub/collaterals' },
+        { name: 'UpstreamGallery', href: '/nexushub/upg' },
+        { name: 'Systemic Shifts Dropbox', href: '/nexushub/dropbox' },
+        { name: 'Uflix', href: '/nexushub/uflix' },
       ]
     },
-    { name: 'NexusHub', href: '/nexushub', type: 'link' },
     { name: 'NexusGPT', href: '/nexusgpt', type: 'link' },
     { name: 'Submit Stories', href: '/submit-story', type: 'link' },
   ];
@@ -87,26 +89,26 @@ export default function Header() {
       if (ulearnDropdownRef.current && !ulearnDropdownRef.current.contains(event.target)) {
         setIsUlearnOpen(false);
       }
-      if (meetXDropdownRef.current && !meetXDropdownRef.current.contains(event.target)) {
-        setIsMeetXOpen(false);
+      if (nexusHubDropdownRef.current && !nexusHubDropdownRef.current.contains(event.target)) {
+        setIsNexusHubOpen(false);
       }
     };
 
-    if (isSystemicShiftsOpen || isUlearnOpen || isMeetXOpen) {
+    if (isSystemicShiftsOpen || isUlearnOpen || isNexusHubOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isSystemicShiftsOpen, isUlearnOpen, isMeetXOpen]);
+  }, [isSystemicShiftsOpen, isUlearnOpen, isNexusHubOpen]);
 
   // Close mobile menu when a link is clicked
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
     setIsSystemicShiftsOpen(false);
     setIsUlearnOpen(false);
-    setIsMeetXOpen(false);
+    setIsNexusHubOpen(false);
   };
 
   return (
@@ -130,12 +132,12 @@ export default function Header() {
           {navItems.map((item) => {
             if (item.type === 'dropdown') {
               const isSystemicShifts = item.name === 'Systemic Shifts';
-              const isUlearn = item.name === 'Ulearn';
-              const isMeetX = item.name === 'MeetX';
-              const isOpen = isSystemicShifts ? isSystemicShiftsOpen : (isUlearn ? isUlearnOpen : (isMeetX ? isMeetXOpen : false));
-              const setIsOpen = isSystemicShifts ? setIsSystemicShiftsOpen : (isUlearn ? setIsUlearnOpen : (isMeetX ? setIsMeetXOpen : () => {}));
-              const dropdownRef = isSystemicShifts ? systemicShiftsDropdownRef : (isUlearn ? ulearnDropdownRef : (isMeetX ? meetXDropdownRef : null));
-              const isInSection = isSystemicShifts ? isInSystemicShifts : (isUlearn ? isInUlearn : (isMeetX ? isInMeetX : false));
+              const isUlearn = item.name === 'ULearn';
+              const isNexusHub = item.name === 'NexusHub';
+              const isOpen = isSystemicShifts ? isSystemicShiftsOpen : (isUlearn ? isUlearnOpen : (isNexusHub ? isNexusHubOpen : false));
+              const setIsOpen = isSystemicShifts ? setIsSystemicShiftsOpen : (isUlearn ? setIsUlearnOpen : (isNexusHub ? setIsNexusHubOpen : () => {}));
+              const dropdownRef = isSystemicShifts ? systemicShiftsDropdownRef : (isUlearn ? ulearnDropdownRef : (isNexusHub ? nexusHubDropdownRef : null));
+              const isInSection = isSystemicShifts ? isInSystemicShifts : (isUlearn ? isInUlearn : (isNexusHub ? isInNexusHub : false));
               
               return (
                 <div 
@@ -254,10 +256,10 @@ export default function Header() {
           {navItems.map((item) => {
             if (item.type === 'dropdown') {
               const isSystemicShifts = item.name === 'Systemic Shifts';
-              const isUlearn = item.name === 'Ulearn';
-              const isMeetX = item.name === 'MeetX';
-              const isOpen = isSystemicShifts ? isSystemicShiftsOpen : (isUlearn ? isUlearnOpen : (isMeetX ? isMeetXOpen : false));
-              const setIsOpen = isSystemicShifts ? setIsSystemicShiftsOpen : (isUlearn ? setIsUlearnOpen : (isMeetX ? setIsMeetXOpen : () => {}));
+              const isUlearn = item.name === 'ULearn';
+              const isNexusHub = item.name === 'NexusHub';
+              const isOpen = isSystemicShifts ? isSystemicShiftsOpen : (isUlearn ? isUlearnOpen : (isNexusHub ? isNexusHubOpen : false));
+              const setIsOpen = isSystemicShifts ? setIsSystemicShiftsOpen : (isUlearn ? setIsUlearnOpen : (isNexusHub ? setIsNexusHubOpen : () => {}));
               
               return (
                 <div key={item.name} className="flex flex-col items-center gap-2">
