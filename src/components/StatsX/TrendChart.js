@@ -293,7 +293,7 @@ export default function TrendChart({
               <select
                 value={validMetric}
                 onChange={(e) => onMetricChange(e.target.value)}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition-all"
+                className="px-3 py-1.5 text-sm border border-gray-200 rounded-xl bg-white text-gray-900 shadow-sm hover:shadow-md transition-all"
               >
                 <option value="combined">Combined Activity</option>
                 <option value="stories">Stories</option>
@@ -302,7 +302,7 @@ export default function TrendChart({
             )}
             <button
               onClick={() => setScale(scale === 'linear' ? 'log' : 'linear')}
-              className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+              className="px-4 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
             >
               {scale === 'linear' ? 'Log Scale' : 'Linear Scale'}
             </button>
@@ -342,7 +342,7 @@ export default function TrendChart({
               <select
                 value={validMetric}
                 onChange={(e) => onMetricChange(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-gray-200 rounded-xl bg-white shadow-sm hover:shadow-md transition-all"
+              className="px-3 py-1.5 text-sm border border-gray-200 rounded-xl bg-white text-gray-900 shadow-sm hover:shadow-md transition-all"
             >
               <option value="combined">Combined Activity</option>
               <option value="stories">Stories</option>
@@ -351,7 +351,7 @@ export default function TrendChart({
           )}
           <button
             onClick={() => setScale(scale === 'linear' ? 'log' : 'linear')}
-            className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+            className="px-4 py-2 text-sm border border-gray-200 rounded-xl bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
           >
             {scale === 'linear' ? 'Log Scale' : 'Linear Scale'}
           </button>

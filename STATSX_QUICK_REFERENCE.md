@@ -136,6 +136,7 @@ await generateAllFakeData({
   - 30-day forecast (dotted line)
   - Anomaly markers (red/blue dots)
   - Toggle between linear/log scales
+  - High contrast UI (black text on white for dropdown and buttons)
 - **Data**: Stories, meetings, or combined activity
 
 ### PulseWidget Component
@@ -155,6 +156,7 @@ await generateAllFakeData({
   - Date range selector
   - Progress indicator
   - Auto-refresh after generation
+  - High contrast input fields (black text on white for optimal visibility)
 
 ---
 

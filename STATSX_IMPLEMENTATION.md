@@ -229,6 +229,7 @@ systemicshiftsver2/
 - **Anomaly Detection**: Highlights unusual spikes/dips on chart
 - **Scale Toggle**: Switch between linear and logarithmic scales
 - **Interactive Tooltips**: Detailed information on hover
+- **High Contrast UI**: Dropdown and button use black text (`text-gray-900`) on white background for optimal visibility
 
 **Props**:
 - `data`: Aggregated dashboard data
@@ -486,6 +487,7 @@ Recent Anomalies:
 - Real-time generation progress
 - Results display with counts
 - Auto-refresh after generation
+- **High Contrast Inputs**: All input fields use black text (`text-gray-900`) on white background for optimal visibility
 
 **Usage**:
 1. Set desired counts for each data type

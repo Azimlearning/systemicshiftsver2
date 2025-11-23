@@ -64,7 +64,7 @@ export default function DataGenerator() {
             type="number"
             value={options.storiesCount}
             onChange={(e) => setOptions({ ...options, storiesCount: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white"
             min="0"
             max="500"
           />
@@ -75,7 +75,7 @@ export default function DataGenerator() {
             type="number"
             value={options.meetingsCount}
             onChange={(e) => setOptions({ ...options, meetingsCount: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white"
             min="0"
             max="500"
           />
@@ -86,7 +86,7 @@ export default function DataGenerator() {
             type="number"
             value={options.analyticsCount}
             onChange={(e) => setOptions({ ...options, analyticsCount: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white"
             min="0"
             max="1000"
           />
@@ -97,7 +97,7 @@ export default function DataGenerator() {
             type="number"
             value={options.daysBack}
             onChange={(e) => setOptions({ ...options, daysBack: parseInt(e.target.value) || 30 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white"
             min="7"
             max="365"
           />
