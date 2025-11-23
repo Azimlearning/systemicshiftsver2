@@ -1,7 +1,7 @@
 // src/app/nexushub/page.js
 
 import Link from 'next/link';
-import { FaBoxOpen, FaImages, FaThList, FaVideo, FaNetworkWired } from 'react-icons/fa';
+import { FaBoxOpen, FaImages, FaThList, FaNetworkWired } from 'react-icons/fa';
 import FadeInWhenVisible from '../../components/animations/FadeInWhenVisible';
 
 const NexusHubLanding = () => (
@@ -66,20 +66,6 @@ const NexusHubLanding = () => (
         </div>
       </Link>
 
-      {/* Uflix Card */}
-      <Link href="/nexushub/uflix" className="group">
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-purple-500">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="bg-purple-600 p-3 rounded-lg group-hover:scale-110 transition-transform">
-              <FaVideo className="text-white text-2xl" />
-            </div>
-            <h3 className="text-2xl font-bold text-purple-700">Uflix</h3>
-          </div>
-          <p className="text-gray-700">
-            Watch educational videos and content from Systemic Shifts Unplugged and more.
-          </p>
-        </div>
-      </Link>
     </div>
   </div>
 );

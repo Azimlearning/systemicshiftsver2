@@ -250,7 +250,7 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
           <h2 className="text-2xl font-bold text-gray-800">Add to Knowledge Base</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-700 hover:text-gray-900 transition-colors"
             disabled={isSubmitting}
           >
             <FaTimes size={24} />
@@ -324,7 +324,7 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
                 )}
               </div>
               {selectedFile && (
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-gray-700 mt-2">
                   File: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
                 </p>
               )}
@@ -357,7 +357,7 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
                 value={formData.content}
                 onChange={handleInputChange}
                 rows={12}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none text-gray-900"
                 placeholder="Enter the content to add to the knowledge base..."
                 required
                 disabled={isSubmitting}
@@ -374,7 +374,7 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
                   name="category"
                   value={formData.category}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-gray-900 bg-white"
                   disabled={isSubmitting}
                 >
                   {CATEGORIES.map(cat => (
@@ -394,7 +394,7 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
                   name="source"
                   value={formData.source}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-gray-900"
                   placeholder="manual, website, document, etc."
                   disabled={isSubmitting}
                 />
@@ -412,7 +412,7 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
                   name="tags"
                   value={formData.tags}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-gray-900"
                   placeholder="petronas, upstream, strategy, etc."
                   disabled={isSubmitting}
                 />
@@ -427,7 +427,7 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
                   name="sourceUrl"
                   value={formData.sourceUrl}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-gray-900"
                   placeholder="/petronas-2.0 or external URL"
                   disabled={isSubmitting}
                 />

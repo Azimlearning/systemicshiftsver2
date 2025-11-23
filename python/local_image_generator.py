@@ -559,4 +559,3 @@ if __name__ == "__main__":
     logger.info("=" * 60)
     
     monitor_firestore()
-

@@ -125,13 +125,13 @@ export default function MeetingList({ onCreateMeeting, onViewMeeting, onEditMeet
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="flex-1 max-w-md">
           <div className="relative">
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" />
             <input
               type="text"
               placeholder="Search meetings..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-gray-900"
             />
           </div>
         </div>
@@ -157,7 +157,7 @@ export default function MeetingList({ onCreateMeeting, onViewMeeting, onEditMeet
         </div>
       ) : filteredMeetings.length === 0 ? (
         <div className="text-center py-12">
-          <FaFileAlt className="mx-auto text-gray-400 text-5xl mb-4" />
+          <FaFileAlt className="mx-auto text-gray-600 text-5xl mb-4" />
           <p className="text-gray-600 text-lg">No meetings found</p>
           <button
             onClick={onCreateMeeting}
@@ -176,7 +176,7 @@ export default function MeetingList({ onCreateMeeting, onViewMeeting, onEditMeet
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold text-gray-800 mb-2">{meeting.title || 'Untitled Meeting'}</h3>
-                  <p className="text-sm text-gray-500 mb-2">
+                  <p className="text-sm text-gray-700 mb-2">
                     {formatDate(meeting.createdAt)}
                     {meeting.fileType && (
                       <span className="ml-2 px-2 py-1 bg-teal-100 text-teal-700 rounded text-xs">

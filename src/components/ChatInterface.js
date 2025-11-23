@@ -78,7 +78,7 @@ export default function ChatInterface({ chatFunctionUrl }) {
          <h3 className="text-lg font-semibold text-gray-700">Ask Nexus Assistant</h3>
          <button 
            onClick={handleClearChat}
-           className="text-sm text-gray-500 hover:text-red-600 flex items-center gap-1 transition-colors"
+           className="text-sm text-gray-700 hover:text-red-600 flex items-center gap-1 transition-colors"
            title="Clear chat history"
          >
            <FaSync /> Clear Chat
@@ -95,9 +95,9 @@ export default function ChatInterface({ chatFunctionUrl }) {
                 <p className="whitespace-pre-wrap">{msg.content}</p>
               </div>
               {/* --- FIX: Added suppressHydrationWarning to the span --- */}
-              <span suppressHydrationWarning className="text-xs text-gray-400 mt-1 px-1">{msg.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+              <span suppressHydrationWarning className="text-xs text-gray-600 mt-1 px-1">{msg.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
             </div>
-            {msg.role === 'user' && <FaUserCircle className="text-2xl text-gray-400 mb-5 flex-shrink-0" />}
+            {msg.role === 'user' && <FaUserCircle className="text-2xl text-gray-600 mb-5 flex-shrink-0" />}
           </div>
         ))}
         {isChatLoading && (
@@ -111,7 +111,7 @@ export default function ChatInterface({ chatFunctionUrl }) {
                           <div className="w-2 h-2 bg-teal-200 rounded-full animation-delay-400"></div>
                       </div>
                   </div>
-                   <span className="text-xs text-gray-400 mt-1 px-1">Typing...</span>
+                   <span className="text-xs text-gray-600 mt-1 px-1">Typing...</span>
               </div>
            </div>
         )}
@@ -119,7 +119,7 @@ export default function ChatInterface({ chatFunctionUrl }) {
 
       {suggestions.length > 0 && !isChatLoading && (
         <div className="p-3 border-t border-gray-200 bg-gray-50 flex flex-wrap gap-2 justify-center">
-            <span className="text-xs text-gray-500 w-full text-center mb-1">Suggestions:</span>
+            <span className="text-xs text-gray-700 w-full text-center mb-1">Suggestions:</span>
             {suggestions.map((s, i) => (
                 <button key={i} onClick={() => handleSuggestionClick(s)} className="text-sm bg-white border border-gray-300 text-teal-700 hover:bg-teal-50 px-3 py-1 rounded-full transition-colors">
                     {s}
@@ -131,7 +131,7 @@ export default function ChatInterface({ chatFunctionUrl }) {
       <form onSubmit={handleChatSubmit} className="flex border-t border-gray-300 relative items-center">
         <textarea ref={inputRef} value={chatInput} onChange={(e) => setChatInput(e.target.value)} placeholder={isChatLoading ? "Nexus Assistant is thinking..." : "Type your question here..."} disabled={isChatLoading} rows="1" className="flex-grow p-4 pr-10 border-none outline-none resize-none disabled:bg-gray-100 text-gray-900 overflow-y-auto" style={{ maxHeight: '6em' }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChatSubmit(e); }}}/>
         {chatInput && !isChatLoading && (
-          <button type="button" onClick={() => setChatInput('')} className="absolute right-20 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1" title="Clear input">
+          <button type="button" onClick={() => setChatInput('')} className="absolute right-20 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-gray-800 p-1" title="Clear input">
             <FaTimes />
           </button>
         )}

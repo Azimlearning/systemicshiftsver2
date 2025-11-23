@@ -46,9 +46,9 @@ export default function FileUploader({ onFileSelect, uploading, uploadProgress, 
           </div>
         ) : (
           <div className="space-y-2">
-            <FaUpload className="mx-auto text-3xl text-gray-400" />
-            <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-            <p className="text-xs text-gray-500">PDF, TXT, or DOCX (Max 10MB)</p>
+            <FaUpload className="mx-auto text-3xl text-gray-600" />
+            <p className="text-sm text-gray-700">Click to upload or drag and drop</p>
+            <p className="text-xs text-gray-700">PDF, TXT, or DOCX (Max 10MB)</p>
           </div>
         )}
       </div>

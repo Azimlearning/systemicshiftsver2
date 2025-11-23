@@ -73,7 +73,6 @@ export default function Header() {
         { name: 'Collaterals', href: '/nexushub/collaterals' },
         { name: 'UpstreamGallery', href: '/nexushub/upg' },
         { name: 'Systemic Shifts Dropbox', href: '/nexushub/dropbox' },
-        { name: 'Uflix', href: '/nexushub/uflix' },
       ]
     },
     { name: 'NexusGPT', href: '/nexusgpt', type: 'link' },

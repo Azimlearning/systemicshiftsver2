@@ -15,7 +15,7 @@
 import Header from '../components/Header';
 import HeroSection from '../components/HeroSection';
 import LoadingAnimation from '../components/LoadingAnimation';
-import WebsiteCapabilities from '../components/WebsiteCapabilities';
+import AIPoweredFeatures from '../components/AIPoweredFeatures';
 import RotatingBanner from '../components/RotatingBanner';
 import JukrisLens from '../components/JukrisLens';
 import Footer from '../components/Footer';
@@ -26,16 +26,18 @@ export default function Home() {
       <LoadingAnimation />
       <Header />
       <main className="flex-grow relative z-10">
-        {/* Landing Page: Upstream Buzz */}
+        {/* Landing Page: Upstream Buzz Hero Banner */}
         <section id="home">
           <HeroSection />
         </section>
         
+        {/* AI-Powered Features Section */}
+        <section id="ai-features">
+          <AIPoweredFeatures />
+        </section>
+        
         {/* Rotating Banner Section (Hero Banner) */}
         <RotatingBanner />
-        
-        {/* Website Capabilities Section */}
-        <WebsiteCapabilities />
         
         {/* Jukris Lens Section */}
         <JukrisLens />

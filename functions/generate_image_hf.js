@@ -204,7 +204,10 @@ exports.generateImageHf = async (req, res) => {
         await db.collection("stories").doc(docId).update({
           aiGeneratedImageUrl: publicUrl,
           analysisTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+          imageGenerationStatus: "completed",
+          imageGenerationCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+        console.log(`[generateImageHf] Updated Firestore document ${docId} with image URL and completion status`);
       } catch (e) {
         console.error("Failed to update Firestore doc:", e);
       }

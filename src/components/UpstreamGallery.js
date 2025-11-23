@@ -175,6 +175,8 @@ export default function UpstreamGallery() {
         pageSnapshotsRef.current[newPage] = newLastVisible;
       }
 
+      setLoading(false);
+
     } catch (err) {
       console.error("Error fetching images:", err);
       if (retryCount < 2) {
@@ -814,7 +816,7 @@ export default function UpstreamGallery() {
                 <h3 className="text-sm font-semibold text-gray-800 truncate" title={image.title}>
                   {image.title}
                 </h3>
-                <p className="text-xs text-gray-500 mt-1">{image.category}</p>
+                <p className="text-xs text-gray-700 mt-1">{image.category}</p>
                 {image.tags && image.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {image.tags.slice(0, 3).map((tag, idx) => (
@@ -837,7 +839,7 @@ export default function UpstreamGallery() {
             <button
               onClick={() => fetchImages('first')}
               disabled={currentPage === 1}
-              className="bg-gray-200 text-gray-700 font-semibold py-2 px-3 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-gray-300"
+              className="bg-gray-200 text-gray-700 font-semibold py-2 px-3 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed hover:bg-gray-300"
               title="First page"
             >
               ««
@@ -846,7 +848,7 @@ export default function UpstreamGallery() {
             <button
               onClick={() => fetchImages('prev')}
               disabled={currentPage === 1}
-              className="bg-gray-200 text-gray-700 font-semibold py-2 px-3 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-gray-300"
+              className="bg-gray-200 text-gray-700 font-semibold py-2 px-3 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed hover:bg-gray-300"
               title="Previous page"
             >
               «
@@ -875,7 +877,7 @@ export default function UpstreamGallery() {
                 );
                 if (startPage > 2) {
                   pages.push(
-                    <span key="ellipsis-start" className="px-2 text-gray-500">
+                    <span key="ellipsis-start" className="px-2 text-gray-700">
                       ...
                     </span>
                   );
@@ -901,7 +903,7 @@ export default function UpstreamGallery() {
               if (endPage < totalPages) {
                 if (endPage < totalPages - 1) {
                   pages.push(
-                    <span key="ellipsis-end" className="px-2 text-gray-500">
+                    <span key="ellipsis-end" className="px-2 text-gray-700">
                       ...
                     </span>
                   );
@@ -923,7 +925,7 @@ export default function UpstreamGallery() {
             <button
               onClick={() => fetchImages('next')}
               disabled={currentPage === totalPages || !lastVisible}
-              className="bg-gray-200 text-gray-700 font-semibold py-2 px-3 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-gray-300"
+              className="bg-gray-200 text-gray-700 font-semibold py-2 px-3 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed hover:bg-gray-300"
               title="Next page"
             >
               »
@@ -935,7 +937,7 @@ export default function UpstreamGallery() {
                 fetchImages('jump', lastPage);
               }}
               disabled={currentPage === totalPages || !lastVisible}
-              className="bg-gray-200 text-gray-700 font-semibold py-2 px-3 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-gray-300"
+              className="bg-gray-200 text-gray-700 font-semibold py-2 px-3 rounded transition-colors disabled:bg-gray-100 disabled:text-gray-700 disabled:cursor-not-allowed hover:bg-gray-300"
               title="Last page"
             >
               »»

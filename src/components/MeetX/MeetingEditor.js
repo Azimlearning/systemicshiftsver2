@@ -164,7 +164,7 @@ export default function MeetingEditor({ meeting, onSave, onCancel }) {
         </h2>
         <button
           onClick={onCancel}
-          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <FaTimes />
         </button>
@@ -180,7 +180,7 @@ export default function MeetingEditor({ meeting, onSave, onCancel }) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-gray-900"
             placeholder="Enter meeting title..."
           />
         </div>
@@ -212,7 +212,7 @@ export default function MeetingEditor({ meeting, onSave, onCancel }) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={15}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-gray-900"
             placeholder="Enter meeting notes or upload a file to extract text..."
           />
         </div>
@@ -241,7 +241,7 @@ export default function MeetingEditor({ meeting, onSave, onCancel }) {
               type="text"
               value={sharedWith.join(', ')}
               onChange={(e) => setSharedWith(e.target.value.split(',').map(s => s.trim()).filter(s => s))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-gray-900"
               placeholder="user1, user2, user3"
             />
           </div>

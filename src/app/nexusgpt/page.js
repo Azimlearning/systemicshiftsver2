@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaUserCircle, FaRobot, FaTimes, FaSync, FaUpload, FaPlus, FaDatabase, FaPaperPlane } from 'react-icons/fa';
+import { FaUserCircle, FaRobot, FaTimes, FaSync, FaPlus, FaDatabase, FaPaperPlane } from 'react-icons/fa';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import StaticFAQ from '../../components/StaticFAQ'; // This is now the prompt bubbles
@@ -219,7 +219,7 @@ export default function NexusGPTPage() {
                 onClick={handleClearChat} 
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors" 
+                className="text-sm text-gray-700 hover:text-gray-900 flex items-center gap-1 transition-colors" 
                 title="Clear chat history"
               >
                   <FaSync /> Clear Chat
@@ -228,18 +228,10 @@ export default function NexusGPTPage() {
                 onClick={() => setIsInjectorOpen(true)} 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="p-2 ml-4 text-gray-400 hover:text-teal-500 transition-colors" 
+                className="p-2 ml-4 text-gray-700 hover:text-teal-500 transition-colors" 
                 title="Add to Knowledge Base"
               >
                 <FaDatabase size={18} />
-              </motion.button>
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="p-2 ml-4 text-gray-400 hover:text-gray-600" 
-                title="Upload Document (WIP)"
-              >
-                <FaUpload size={18} />
               </motion.button>
           </div>
 

@@ -1,7 +1,5 @@
 // functions/index.js
 
-// functions/index.js
-
 const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { defineSecret } = require("firebase-functions/params");
@@ -265,24 +263,119 @@ exports.analyzeStorySubmission = onDocumentCreated(
     }
 
     try {
-        console.log(`Updating Firestore document ${storyId}...`);
+        console.log(`[analyzeStorySubmission] Updating Firestore document ${storyId} with writeup first...`);
+        // Save writeup immediately so it can be viewed
         await db.collection('stories').doc(storyId).update({
             aiGeneratedWriteup: aiWriteup,
             aiInfographicConcept: aiInfographicConcept,
-            aiGeneratedImageUrl: aiGeneratedImageUrl,
-            analysisTimestamp: admin.firestore.FieldValue.serverTimestamp()
+            aiGeneratedImageUrl: "pending", // Set to "pending" status
+            analysisTimestamp: admin.firestore.FieldValue.serverTimestamp(),
+            imageGenerationStatus: "pending" // Track image generation status
         });
-        console.log(`Successfully updated document ${storyId} with all AI analysis.`);
+        console.log(`[analyzeStorySubmission] ✅ Writeup saved. Document ${storyId} is now viewable.`);
+        
+        // Trigger image generation asynchronously (don't wait for it)
+        if (typeof aiInfographicConcept === 'object' && aiInfographicConcept.title) {
+            console.log(`[analyzeStorySubmission] Triggering async image generation for story ${storyId}...`);
+            // Call the image generation function asynchronously
+            triggerImageGenerationForStory(storyId, aiInfographicConcept).catch(err => {
+                console.error(`[analyzeStorySubmission] Error in async image generation:`, err);
+            });
+        } else {
+            console.log(`[analyzeStorySubmission] Skipping image generation - no valid infographic concept`);
+        }
     } catch (error) {
-        console.error(`Error updating Firestore document ${storyId}:`, error);
+        console.error(`[analyzeStorySubmission] Error updating Firestore document ${storyId}:`, error);
     }
 });
+
+/**
+ * Helper function to trigger image generation for a story asynchronously
+ * This is called internally after writeup is generated
+ * Uses HTTP call to the generateImageHf Cloud Function
+ */
+async function triggerImageGenerationForStory(storyId, aiInfographicConcept) {
+  try {
+    console.log(`[triggerImageGenerationForStory] Starting async image generation for story ${storyId}`);
+    
+    // Update status to generating
+    await db.collection('stories').doc(storyId).update({
+      imageGenerationStatus: "generating",
+      imageGenerationStartedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Build image prompt from infographic concept
+    const imagePrompt = buildImagePromptFromConcept(aiInfographicConcept);
+    
+    // Get the generateImageHf function URL (use environment variable or default)
+    const generateImageUrl = process.env.GENERATE_IMAGE_HF_URL || 
+      'https://us-central1-systemicshiftv2.cloudfunctions.net/generateImageHf';
+    
+    // Call the image generation function via HTTP
+    const fetch = require('node-fetch');
+    const response = await fetch(generateImageUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: imagePrompt,
+        docId: storyId,
+        width: 512,
+        height: 512,
+        num_inference_steps: 30,
+        guidance_scale: 7.5
+      })
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`[triggerImageGenerationForStory] ✅ Image generated successfully for story ${storyId}`);
+      // Update status to completed - the generateImageHf function already updates the image URL
+      await db.collection('stories').doc(storyId).update({
+        imageGenerationStatus: "completed",
+        imageGenerationCompletedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    } else {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error(`[triggerImageGenerationForStory] ❌ Image generation failed:`, errorData);
+      await db.collection('stories').doc(storyId).update({
+        imageGenerationStatus: "failed",
+        imageGenerationError: errorData.error || 'Unknown error'
+      });
+    }
+  } catch (error) {
+    console.error(`[triggerImageGenerationForStory] Error:`, error);
+    await db.collection('stories').doc(storyId).update({
+      imageGenerationStatus: "failed",
+      imageGenerationError: error.message
+    });
+  }
+}
+
+/**
+ * Build image prompt from infographic concept
+ */
+function buildImagePromptFromConcept(concept) {
+  if (!concept || typeof concept !== 'object') {
+    return 'Professional corporate infographic for PETRONAS Upstream, teal and white color scheme';
+  }
+
+  const title = concept.title || 'Systemic Shift Story';
+  const visualStyle = concept.visualStyle || 'flat design, minimal icons, professional, modern';
+  const colorPalette = concept.colorPalette || 'teal, white, light gray';
+  
+  return `Create a professional, flat-design corporate infographic for PETRONAS Upstream. Use a vertical layout. Color palette MUST primarily use ${colorPalette}.
+Title: "${title}"
+Visual Style: ${visualStyle}
+Do NOT include text directly on the image. Focus on visual representation of the data and corporate themes.`;
+}
 
 // Manual trigger function to test image generation for existing documents
 exports.triggerImageGeneration = onRequest(
   {
     region: 'us-central1',
-    secrets: [geminiApiKey, openRouterApiKey],
+    secrets: [geminiApiKey, openRouterApiKey, defineSecret('HF_API_TOKEN')],
     timeoutSeconds: 600,
     memory: '1GiB',
   },
@@ -427,49 +520,68 @@ exports.askChatbot = onRequest(
 
       try {
         const ragRetriever = new ChatbotRAGRetriever();
-        retrievedDocs = await ragRetriever.retrieveRelevantDocuments(message, keys, 3);
+        console.log(`[askChatbot] Starting RAG retrieval for query: "${message.substring(0, 100)}..."`);
+        retrievedDocs = await ragRetriever.retrieveRelevantDocuments(message, keys, 5); // Increased to 5 for better context
         
         if (retrievedDocs && retrievedDocs.length > 0) {
-          knowledgeContext = ragRetriever.buildContextString(retrievedDocs, 2500);
+          knowledgeContext = ragRetriever.buildContextString(retrievedDocs, 3000); // Increased context length
           citations = retrievedDocs.map(doc => ({
             title: doc.title,
             sourceUrl: doc.sourceUrl,
             category: doc.category,
-            similarity: doc.similarity
+            similarity: doc.similarity,
+            contentPreview: doc.content ? doc.content.substring(0, 100) + '...' : ''
           }));
-          console.log(`[askChatbot] Retrieved ${retrievedDocs.length} relevant documents for context`);
+          console.log(`[askChatbot] ✅ Retrieved ${retrievedDocs.length} relevant documents for context`);
+          console.log(`[askChatbot] Knowledge context length: ${knowledgeContext.length} characters`);
+          console.log(`[askChatbot] Citations: ${citations.map(c => c.title).join(', ')}`);
         } else {
-          console.log('[askChatbot] No relevant documents found, using base context only');
+          console.log('[askChatbot] ⚠️ No relevant documents found above similarity threshold, using base context only');
+          console.log('[askChatbot] This may indicate: 1) No documents in knowledge base, 2) Query doesn\'t match any documents, 3) Similarity threshold too high');
         }
       } catch (ragError) {
-        console.warn(`[askChatbot] RAG retrieval failed: ${ragError.message}. Continuing with base context.`);
+        console.error(`[askChatbot] ❌ RAG retrieval failed: ${ragError.message}`);
+        console.error(`[askChatbot] Stack: ${ragError.stack}`);
+        console.warn(`[askChatbot] Continuing with base context only`);
       }
 
       // Build enhanced system prompt with knowledge base context
       const baseContext = `Goal is PETRONAS 2.0 by 2035; Key Shifts are "Portfolio High-Grading" & "Deliver Advantaged Barrels"; Mindsets are "More Risk Tolerant", "Commercial Savvy", "Growth Mindset".`;
       
-      const systemPrompt = `You are a helpful AI assistant for the PETRONAS Upstream "Systemic Shifts" microsite named "Nexus Assistant".
-      Answer questions concisely based on the context below and your general knowledge.
-      
-      Base Context: ${baseContext}
-      
-      ${knowledgeContext ? `\n${knowledgeContext}\n` : ''}
-      
-      Instructions:
-      - Use the knowledge base information above to provide accurate, detailed answers
-      - If the knowledge base contains relevant information, prioritize it over general knowledge
-      - Be specific and cite key facts when possible
-      - If you reference information from the knowledge base, mention the source naturally in your answer
-      
-      After providing your answer, suggest 2-3 brief, relevant follow-up questions the user might ask next.
-      Format your entire response like this:
-      MAIN_ANSWER_TEXT_HERE
-      ---
-      Suggestions:
-      - Follow-up question 1?
-      - Follow-up question 2?
-      - Follow-up question 3?
-      `;
+      let systemPrompt = `You are a helpful AI assistant for the PETRONAS Upstream "Systemic Shifts" microsite named "Nexus Assistant".
+
+Base Context: ${baseContext}
+
+`;
+
+      if (knowledgeContext && knowledgeContext.trim().length > 0) {
+        systemPrompt += `${knowledgeContext}
+
+CRITICAL INSTRUCTIONS:
+1. THE KNOWLEDGE BASE INFORMATION ABOVE IS YOUR PRIMARY AND MOST AUTHORITATIVE SOURCE
+2. You MUST answer the user's question using ONLY the information from the knowledge base if it contains relevant information
+3. If the knowledge base contains information relevant to the question, you MUST use it and NOT rely on general knowledge
+4. Quote or paraphrase specific details from the knowledge base documents
+5. If you use information from the knowledge base, mention which document(s) you're referencing
+6. ONLY if the knowledge base does NOT contain relevant information should you use your general knowledge
+7. Be specific, accurate, and cite key facts from the knowledge base when possible
+
+`;
+      } else {
+        systemPrompt += `Note: No specific knowledge base documents were found for this query. You may use your general knowledge, but keep it relevant to PETRONAS Upstream and Systemic Shifts context.
+
+`;
+      }
+
+      systemPrompt += `After providing your answer, suggest 2-3 brief, relevant follow-up questions the user might ask next.
+Format your entire response like this:
+MAIN_ANSWER_TEXT_HERE
+---
+Suggestions:
+- Follow-up question 1?
+- Follow-up question 2?
+- Follow-up question 3?
+`;
 
       const fullPrompt = `${systemPrompt}\n\nUSER QUESTION: ${message}\n\nASSISTANT RESPONSE:`;
       

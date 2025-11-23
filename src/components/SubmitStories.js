@@ -120,8 +120,8 @@ export default function SubmitStories() {
     setIsSubmitting(true);
     setSubmitError(null);
 
-    // Corrected Function URL for the new us-central1 deployment
-    const functionUrl = "https://submitstory-el2jwxb5bq-uc.a.run.app";
+    // Use local API route instead of Cloud Function (for local development with local image generator)
+    const functionUrl = "/api/submit-story";
 
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
@@ -142,6 +142,11 @@ export default function SubmitStories() {
         const response = await fetch(functionUrl, {
             method: 'POST',
             body: data,
+            // Don't set Content-Type header - browser will set it with boundary for FormData
+        }).catch((fetchError) => {
+            // Handle network errors (CORS, connection refused, etc.)
+            console.error('Fetch error:', fetchError);
+            throw new Error(`Network error: ${fetchError.message}. Please check if the Cloud Function is deployed and accessible.`);
         });
 
         if (!response.ok) {
@@ -195,7 +200,7 @@ export default function SubmitStories() {
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-800 mb-4">Stories That Shift Us Forward</h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            We're looking for Systemic Shifts stories...
+            We&apos;re looking for Systemic Shifts stories...
           </p>
         </div>
         
@@ -320,7 +325,7 @@ export default function SubmitStories() {
                   className="h-5 w-5 text-teal-600 border-gray-300 rounded focus:ring-teal-500 mt-1 flex-shrink-0"
                 />
                 <span className="text-gray-700 text-sm md:text-base">
-                  I hereby acknowledge and provide my full consent for the publishing team to review, edit, and enhance the design, layout, and overall presentation of the content I have submitted. I understand that any modifications will be made solely for the purpose of improving readability, visual appeal, and alignment with the organization's publishing standards, without altering the core message or intent of the material. By providing this consent, I affirm that I accept and approve any reasonable design and enhancement adjustments deemed necessary for publication.
+                  I hereby acknowledge and provide my full consent for the publishing team to review, edit, and enhance the design, layout, and overall presentation of the content I have submitted. I understand that any modifications will be made solely for the purpose of improving readability, visual appeal, and alignment with the organization&apos;s publishing standards, without altering the core message or intent of the material. By providing this consent, I affirm that I accept and approve any reasonable design and enhancement adjustments deemed necessary for publication.
                 </span>
               </label>
             </div>

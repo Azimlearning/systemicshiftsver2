@@ -3,43 +3,54 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaDatabase, FaSpinner } from 'react-icons/fa';
-import { generateAllFakeData } from '../../lib/generateFakeData';
+import { FaDatabase, FaTrash, FaDownload, FaUpload, FaSpinner } from 'react-icons/fa';
+import { getAvailableScenarios, loadScenario, clearTestData } from '../../lib/dataScenarios';
 
 /**
- * Admin panel component for generating fake data
+ * Data Generator Component for StatsX
+ * Allows switching between data scenarios for presentation/testing
  */
 export default function DataGenerator() {
-  const [generating, setGenerating] = useState(false);
-  const [results, setResults] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState('normal');
+  const [lastResult, setLastResult] = useState(null);
   const [error, setError] = useState(null);
-  const [options, setOptions] = useState({
-    storiesCount: 50,
-    meetingsCount: 30,
-    analyticsCount: 200,
-    daysBack: 30,
-  });
 
-  const handleGenerate = async () => {
-    if (generating) return;
+  const scenarios = getAvailableScenarios();
 
-    setGenerating(true);
+  const handleGenerate = async (clearFirst = false) => {
+    setLoading(true);
     setError(null);
-    setResults(null);
+    setLastResult(null);
 
     try {
-      const result = await generateAllFakeData(options);
-      setResults(result);
-      
-      // Refresh page after 2 seconds to show new data
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      const result = await loadScenario(selectedScenario, clearFirst);
+      setLastResult(result);
+      alert(`Data generated successfully!\n\nStories: ${result.stories}\nMeetings: ${result.meetings}\nAnalytics: ${result.analytics}`);
     } catch (err) {
-      console.error('Error generating fake data:', err);
       setError(err.message);
+      console.error('Error generating data:', err);
     } finally {
-      setGenerating(false);
+      setLoading(false);
+    }
+  };
+
+  const handleClear = async () => {
+    if (!confirm('Are you sure you want to clear all test data? This cannot be undone.')) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await clearTestData();
+      alert(`Test data cleared!\n\n${JSON.stringify(result.cleared, null, 2)}`);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error clearing data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,104 +58,107 @@ export default function DataGenerator() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-3xl border border-gray-200 p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+      className="bg-white rounded-3xl border border-gray-200 p-6 shadow-sm"
     >
-      <div className="flex items-center gap-2 mb-4">
-        <FaDatabase className="text-teal-600" />
-        <h3 className="text-lg font-bold text-gray-900">Fake Data Generator</h3>
-      </div>
-      <p className="text-sm text-gray-600 mb-4">
-        Generate realistic fake data for testing dashboard visuals. Data will be added to your Firestore collections.
-      </p>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Stories</label>
-          <input
-            type="number"
-            value={options.storiesCount}
-            onChange={(e) => setOptions({ ...options, storiesCount: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white"
-            min="0"
-            max="500"
-          />
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+          <FaDatabase className="text-purple-600 text-xl" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Meetings</label>
-          <input
-            type="number"
-            value={options.meetingsCount}
-            onChange={(e) => setOptions({ ...options, meetingsCount: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white"
-            min="0"
-            max="500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Analytics</label>
-          <input
-            type="number"
-            value={options.analyticsCount}
-            onChange={(e) => setOptions({ ...options, analyticsCount: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white"
-            min="0"
-            max="1000"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Days Back</label>
-          <input
-            type="number"
-            value={options.daysBack}
-            onChange={(e) => setOptions({ ...options, daysBack: parseInt(e.target.value) || 30 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm text-gray-900 bg-white"
-            min="7"
-            max="365"
-          />
+          <h3 className="text-lg font-bold text-gray-900">Data Generator</h3>
+          <p className="text-sm text-gray-700">Generate test data scenarios</p>
         </div>
       </div>
 
-      <button
-        onClick={handleGenerate}
-        disabled={generating}
-        className="w-full md:w-auto px-6 py-2 bg-teal-600 text-white rounded-xl hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-      >
-        {generating ? (
-          <>
-            <FaSpinner className="animate-spin" />
-            Generating...
-          </>
-        ) : (
-          <>
-            <FaDatabase />
-            Generate Fake Data
-          </>
-        )}
-      </button>
+      <div className="space-y-4">
+        {/* Scenario Selection */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Select Scenario
+          </label>
+          <select
+            value={selectedScenario}
+            onChange={(e) => setSelectedScenario(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white text-gray-900"
+            disabled={loading}
+          >
+            {scenarios.map((scenario) => (
+              <option key={scenario.key} value={scenario.key}>
+                {scenario.name} - {scenario.description}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      {results && (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <p className="text-sm font-medium text-green-800 mb-2">Generation Complete:</p>
-          <ul className="text-sm text-green-700 space-y-1">
-            <li>Stories: {results.stories} generated</li>
-            <li>Meetings: {results.meetings} generated</li>
-            <li>Analytics: {results.analytics} generated</li>
-          </ul>
-          {results.errors.length > 0 && (
-            <div className="mt-2 text-xs text-red-600">
-              Errors: {results.errors.join(', ')}
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleGenerate(false)}
+            disabled={loading}
+            className="flex-1 px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <FaSpinner className="animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <FaDatabase />
+                Generate Data
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={() => handleGenerate(true)}
+            disabled={loading}
+            className="px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            title="Clear existing data and generate new"
+          >
+            <FaTrash />
+            Clear & Generate
+          </button>
+        </div>
+
+        <button
+          onClick={handleClear}
+          disabled={loading}
+          className="w-full px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <FaTrash />
+          Clear All Test Data
+        </button>
+
+        {/* Results */}
+        {lastResult && (
+          <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+            <h4 className="font-semibold text-green-800 mb-2">Generation Results</h4>
+            <div className="text-sm text-green-700 space-y-1">
+              <p>Stories: {lastResult.stories}</p>
+              <p>Meetings: {lastResult.meetings}</p>
+              <p>Analytics: {lastResult.analytics}</p>
+              {lastResult.articleEngagement > 0 && (
+                <p>Article Engagement: {lastResult.articleEngagement} articles</p>
+              )}
             </div>
-          )}
-          <p className="text-xs text-green-600 mt-2">Page will refresh in 2 seconds...</p>
-        </div>
-      )}
+          </div>
+        )}
 
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="text-sm text-red-800">Error: {error}</p>
+        {/* Error Display */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+            <p className="text-sm text-red-700">Error: {error}</p>
+          </div>
+        )}
+
+        {/* Warning */}
+        <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <p className="text-xs text-yellow-800">
+            ⚠️ <strong>Warning:</strong> This will modify your Firestore database. Use only in development/testing environments.
+          </p>
         </div>
-      )}
+      </div>
     </motion.div>
   );
 }
-

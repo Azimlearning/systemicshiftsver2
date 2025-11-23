@@ -207,11 +207,11 @@ export default function PodcastGenerator() {
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g., Systemic Shift #8: Operate it Right"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="e.g., Systemic Shift, Petronas 2.0, etc."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900"
               disabled={generating}
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-700 mt-1">
               Enter a topic related to Systemic Shifts, PETRONAS Upstream, or related subjects.
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function PodcastGenerator() {
               onChange={(e) => setContext(e.target.value)}
               placeholder="Provide additional context, URLs, or specific points to cover..."
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900"
               disabled={generating}
             />
           </div>

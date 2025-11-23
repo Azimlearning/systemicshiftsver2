@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '../lib/firebase';
 import { collection, getDocs, query, orderBy, limit, startAfter, deleteDoc, doc, getCountFromServer } from 'firebase/firestore';
 import { FaPodcast, FaPlay, FaPause, FaDownload, FaTrash, FaSearch, FaSpinner } from 'react-icons/fa';
@@ -18,7 +18,7 @@ export default function MyPodcasts() {
   const docsPerPage = 10;
 
   // Fetch podcasts from Firestore
-  const fetchPodcasts = async (pageDirection = 'first') => {
+  const fetchPodcasts = useCallback(async (pageDirection = 'first') => {
     setLoading(true);
     setError('');
 
@@ -62,11 +62,11 @@ export default function MyPodcasts() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [lastVisible, docsPerPage]);
 
   useEffect(() => {
     fetchPodcasts();
-  }, []);
+  }, [fetchPodcasts]);
 
   // Filter podcasts by search term
   const filteredPodcasts = podcasts.filter(podcast =>
@@ -200,13 +200,13 @@ export default function MyPodcasts() {
       {/* Search Bar */}
       <div className="mb-6">
         <div className="relative">
-          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600" />
           <input
             type="text"
             placeholder="Search podcasts by topic or outline..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-gray-900"
           />
         </div>
       </div>
@@ -235,7 +235,7 @@ export default function MyPodcasts() {
               <p className="text-gray-600 text-lg">
                 {searchTerm ? 'No podcasts found matching your search.' : 'No saved podcasts yet.'}
               </p>
-              <p className="text-gray-500 text-sm mt-2">
+              <p className="text-gray-700 text-sm mt-2">
                 {searchTerm ? 'Try a different search term.' : 'Generate and save a podcast to see it here.'}
               </p>
             </div>
@@ -251,7 +251,7 @@ export default function MyPodcasts() {
                       <h3 className="text-xl font-bold text-gray-800 mb-1">
                         {podcast.topic || 'Untitled Podcast'}
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-700">
                         Created: {formatDate(podcast.createdAt)}
                       </p>
                     </div>

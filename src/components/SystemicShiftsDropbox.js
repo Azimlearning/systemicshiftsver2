@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { db } from '../lib/firebase'; 
-import { collection, getDocs, query, orderBy, limit, startAfter, endBefore, deleteDoc, doc, getCountFromServer, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, startAfter, deleteDoc, doc, getCountFromServer, onSnapshot } from 'firebase/firestore';
 import Link from 'next/link';
 
 export default function SystemicShiftsDropbox() {

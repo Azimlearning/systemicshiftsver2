@@ -99,11 +99,20 @@ class ChatbotRAGRetriever {
 
       // Sort by similarity (descending) and return top K
       documentsWithScores.sort((a, b) => b.similarity - a.similarity);
-      const topDocuments = documentsWithScores.slice(0, topK);
+      
+      // Filter by minimum similarity threshold (0.3 is a reasonable threshold)
+      const MIN_SIMILARITY_THRESHOLD = 0.3;
+      const filteredDocuments = documentsWithScores.filter(doc => doc.similarity >= MIN_SIMILARITY_THRESHOLD);
+      const topDocuments = filteredDocuments.slice(0, topK);
 
-      console.log(`[ChatbotRAG] Retrieved ${topDocuments.length} relevant documents`);
+      console.log(`[ChatbotRAG] Retrieved ${topDocuments.length} relevant documents (from ${documentsWithScores.length} total, threshold: ${MIN_SIMILARITY_THRESHOLD})`);
       if (topDocuments.length > 0) {
         console.log(`[ChatbotRAG] Top match: "${topDocuments[0].title}" (similarity: ${topDocuments[0].similarity.toFixed(3)})`);
+        topDocuments.forEach((doc, idx) => {
+          console.log(`[ChatbotRAG]   ${idx + 1}. "${doc.title}" - similarity: ${doc.similarity.toFixed(3)}`);
+        });
+      } else {
+        console.warn(`[ChatbotRAG] No documents met similarity threshold of ${MIN_SIMILARITY_THRESHOLD}. Highest similarity: ${documentsWithScores.length > 0 ? documentsWithScores[0].similarity.toFixed(3) : 'N/A'}`);
       }
 
       return topDocuments;
@@ -125,17 +134,19 @@ class ChatbotRAGRetriever {
       return '';
     }
 
-    let context = 'Relevant Knowledge Base Information:\n\n';
+    let context = '=== RELEVANT KNOWLEDGE BASE INFORMATION (PRIORITY SOURCE) ===\n\n';
     let currentLength = context.length;
 
-    for (const doc of documents) {
-      const docText = `[${doc.title}]\n${doc.content}\nSource: ${doc.sourceUrl || doc.source}\n\n`;
+    for (let i = 0; i < documents.length; i++) {
+      const doc = documents[i];
+      const similarityNote = `[Similarity: ${(doc.similarity * 100).toFixed(1)}%]`;
+      const docText = `Document ${i + 1}: ${doc.title} ${similarityNote}\n${doc.content}\nSource: ${doc.sourceUrl || doc.source || 'Internal Knowledge Base'}\n\n`;
       
       if (currentLength + docText.length > maxLength) {
         // Truncate content if needed
         const remainingLength = maxLength - currentLength - 50; // Leave room for truncation marker
         if (remainingLength > 0) {
-          context += `[${doc.title}]\n${doc.content.substring(0, remainingLength)}...\nSource: ${doc.sourceUrl || doc.source}\n\n`;
+          context += `Document ${i + 1}: ${doc.title} ${similarityNote}\n${doc.content.substring(0, remainingLength)}...\nSource: ${doc.sourceUrl || doc.source || 'Internal Knowledge Base'}\n\n`;
         }
         break;
       }
@@ -144,6 +155,7 @@ class ChatbotRAGRetriever {
       currentLength += docText.length;
     }
 
+    context += '=== END KNOWLEDGE BASE INFORMATION ===\n\n';
     return context.trim();
   }
 
