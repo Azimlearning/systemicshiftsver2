@@ -148,6 +148,7 @@ const Tooltip = ({ segment, value, total, position, visible }) => {
   );
 };
 
+
 function ValueTrajectoryChart() {
   const [hoveredSegment, setHoveredSegment] = useState(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
@@ -306,7 +307,7 @@ function ValueTrajectoryChart() {
             className="text-sm font-semibold fill-gray-700"
             transform={`rotate(-90 30 ${maxHeight / 2})`}
           >
-            NPV (RM Bil)
+             {/*NPV (RM Bil)*/}
           </text>
         </svg>
 
@@ -538,27 +539,27 @@ export default function UpstreamTarget() {
     {
       title: 'PCSB',
       description: 'Focus on High Value, High Upside assets in Malaysia',
-      color: 'bg-indigo-600', // Example color
+      color: 'bg-[#2dd4bf]', // Example color
     },
     {
       title: 'PCIV',
       description: 'Grow International value via disciplined portfolio high-grading',
-      color: 'bg-purple-600', // Example color
+      color: 'bg-[#fcd34d]', // Example color
     },
     {
-      title: 'PCCSV',
+      title: 'CCS',
       description: 'Value driven through diversified CCS portfolio in Malaysia and International',
-      color: 'bg-pink-600', // Example color
+      color: 'bg-[#1e40af]', // Example color
     },
     {
       title: 'Vestigo',
       description: 'Value-grow marginal assets in Malaysia and International',
-      color: 'bg-red-600', // Example color
+      color: 'bg-[#a78bfa]', // Example color
     },
     {
       title: 'Satellite Model',
       description: 'Partnership to unlock opportunities',
-      color: 'bg-orange-600', // Example color
+      color: 'bg-[#bef264]', // Example color
     },
   ];
 

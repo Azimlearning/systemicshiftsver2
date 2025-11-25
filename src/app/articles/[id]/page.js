@@ -1,9 +1,10 @@
 // src/app/articles/[id]/page.js
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
+// Using regular img tag to avoid Next.js Image validation issues with local images
 import Link from 'next/link';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
@@ -46,24 +47,24 @@ export default function ArticleDetailPage() {
             category: 'systemic-shifts',
             categoryLabel: 'Systemic Shifts',
             date: '2025-01-20',
-            image: '/images/highlight-placeholder.jpg',
+            image: '/ArticleThumbnail/Thumbnail-1.jpg',
             content: `# Accelerating Portfolio High-Grading: A Strategic Overview
 
 Portfolio high-grading is a critical strategic initiative that enables us to focus our resources on assets that deliver the most value. This article explores our approach to disciplined divestment and portfolio optimization.
 
-## Strategic Focus
+Strategic Focus
 
 Our portfolio high-grading strategy centers on:
 
-- **Value Creation**: Identifying and retaining assets that generate superior returns
-- **Disciplined Divestment**: Systematically exiting non-core or underperforming assets
-- **Resource Optimization**: Redirecting capital to high-potential opportunities
+- Value Creation: Identifying and retaining assets that generate superior returns
+- Disciplined Divestment: Systematically exiting non-core or underperforming assets
+- Resource Optimization: Redirecting capital to high-potential opportunities
 
-## Implementation Approach
+Implementation Approach
 
 We've developed a rigorous framework for evaluating and executing portfolio decisions, ensuring alignment with our long-term strategic objectives.
 
-## Results and Impact
+Results and Impact
 
 Through this focused approach, we've been able to:
 - Improve overall portfolio returns
@@ -194,11 +195,20 @@ Through this focused approach, we've been able to:
         <article className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Image */}
           <div className="relative h-96 w-full">
-            <Image
-              src={article.image || '/images/highlight-placeholder.jpg'}
+            <img
+              src={article.image || '/ArticleThumbnail/Thumbnail-1.jpg'}
               alt={article.title}
-              fill
-              className="object-cover"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to article thumbnail if original fails
+                if (e.target.src !== '/ArticleThumbnail/Thumbnail-1.jpg') {
+                  e.target.src = '/ArticleThumbnail/Thumbnail-1.jpg';
+                } else {
+                  // Final fallback to gradient background
+                  e.target.style.display = 'none';
+                  e.target.parentElement.style.background = 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)';
+                }
+              }}
             />
             <div className="absolute top-4 left-4">
               <span className={`px-3 py-1 rounded-full text-white text-xs font-semibold ${categoryColors[article.category] || 'bg-gray-500'}`}>

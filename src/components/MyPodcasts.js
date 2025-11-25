@@ -18,7 +18,7 @@ export default function MyPodcasts() {
   const docsPerPage = 10;
 
   // Fetch podcasts from Firestore
-  const fetchPodcasts = useCallback(async (pageDirection = 'first') => {
+  const fetchPodcasts = useCallback(async (pageDirection = 'first', lastDoc = null) => {
     setLoading(true);
     setError('');
 
@@ -31,8 +31,8 @@ export default function MyPodcasts() {
         setTotalDocs(countSnapshot.data().count);
         q = query(podcastsRef, orderBy('createdAt', 'desc'), limit(docsPerPage));
         setCurrentPage(1);
-      } else if (pageDirection === 'next' && lastVisible) {
-        q = query(podcastsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(docsPerPage));
+      } else if (pageDirection === 'next' && lastDoc) {
+        q = query(podcastsRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(docsPerPage));
         setCurrentPage(prev => prev + 1);
       } else {
         q = query(podcastsRef, orderBy('createdAt', 'desc'), limit(docsPerPage));
@@ -52,7 +52,8 @@ export default function MyPodcasts() {
       setPodcasts(podcastsData);
       
       if (querySnapshot.docs.length > 0) {
-        setLastVisible(querySnapshot.docs[querySnapshot.docs.length - 1]);
+        const newLastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+        setLastVisible(newLastVisible);
       } else {
         setLastVisible(null);
       }
@@ -62,11 +63,11 @@ export default function MyPodcasts() {
     } finally {
       setLoading(false);
     }
-  }, [lastVisible, docsPerPage]);
+  }, [docsPerPage]);
 
   useEffect(() => {
-    fetchPodcasts();
-  }, [fetchPodcasts]);
+    fetchPodcasts('first');
+  }, []); // Only run once on mount
 
   // Filter podcasts by search term
   const filteredPodcasts = podcasts.filter(podcast =>
@@ -121,7 +122,7 @@ export default function MyPodcasts() {
       setAudioElements(newAudioElements);
 
       // Refresh list
-      fetchPodcasts();
+      fetchPodcasts('first');
     } catch (err) {
       console.error('Error deleting podcast:', err);
       setError('Failed to delete podcast. Please try again.');
@@ -335,7 +336,10 @@ export default function MyPodcasts() {
           {!searchTerm && totalPages > 1 && (
             <div className="mt-6 flex justify-between items-center">
               <button
-                onClick={() => fetchPodcasts('prev')}
+                onClick={() => {
+                  // For previous, we need to refetch from first and navigate
+                  fetchPodcasts('first');
+                }}
                 disabled={currentPage === 1}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
               >
@@ -345,8 +349,8 @@ export default function MyPodcasts() {
                 Page {currentPage} of {totalPages}
               </span>
               <button
-                onClick={() => fetchPodcasts('next')}
-                disabled={currentPage >= totalPages}
+                onClick={() => fetchPodcasts('next', lastVisible)}
+                disabled={currentPage >= totalPages || !lastVisible}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300"
               >
                 Next

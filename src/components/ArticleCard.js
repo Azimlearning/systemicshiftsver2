@@ -1,9 +1,10 @@
 // src/components/ArticleCard.js
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
+// Using regular img tag to avoid Next.js Image validation issues with local images
 import Link from 'next/link';
 import { FaArrowRight, FaCalendar, FaHeart, FaComment } from 'react-icons/fa';
 import { trackArticleView, toggleArticleLike, checkArticleLike, getArticleEngagement } from '../lib/analytics';
@@ -80,11 +81,16 @@ export default function ArticleCard({ article, index = 0 }) {
       <Link href={`/articles/${article.id}`} onClick={handleCardClick}>
         <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-teal-300">
           <div className="relative h-48 overflow-hidden">
-            <Image
-              src={article.image || '/images/highlight-placeholder.jpg'}
+            <img
+              src={article.image || '/ArticleThumbnail/Thumbnail-1.jpg'}
               alt={article.title}
-              fill
-              className="object-cover group-hover:scale-110 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              onError={(e) => {
+                // Fallback to article thumbnail if original fails
+                if (e.target.src !== '/ArticleThumbnail/Thumbnail-1.jpg') {
+                  e.target.src = '/ArticleThumbnail/Thumbnail-1.jpg';
+                }
+              }}
             />
             <div className="absolute top-4 left-4">
               <span className={`px-3 py-1 rounded-full text-white text-xs font-semibold ${categoryColors[article.category] || 'bg-gray-500'}`}>

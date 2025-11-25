@@ -10,6 +10,13 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+try:
+    from sentence_transformers import SentenceTransformer
+    import numpy as np
+except ImportError:  # pragma: no cover - optional dependency
+    SentenceTransformer = None
+    np = None
+
 class ImageStyleRetriever:
     """Retrieves relevant image styles based on story content"""
     
@@ -22,6 +29,9 @@ class ImageStyleRetriever:
         
         self.styles_file = styles_file
         self.styles_data = self._load_styles()
+        self.semantic_model = None
+        self.style_embeddings = None
+        self._initialize_semantic_model()
     
     def _load_styles(self) -> Dict:
         """Load styles from JSON file"""
@@ -36,6 +46,31 @@ class ImageStyleRetriever:
         except json.JSONDecodeError as e:
             logger.error(f"Error parsing styles JSON: {e}. Using default style.")
             return {"styles": [], "defaultStyle": {}}
+
+    def _initialize_semantic_model(self):
+        """Initialize optional semantic model and style embeddings"""
+        if SentenceTransformer is None or not self.styles_data.get("styles"):
+            return
+        try:
+            self.semantic_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+            style_texts = [self._style_to_text(style) for style in self.styles_data.get("styles", [])]
+            self.style_embeddings = self.semantic_model.encode(style_texts, normalize_embeddings=True)
+            logger.info("Semantic style embeddings loaded for %d references", len(style_texts))
+        except Exception as exc:
+            logger.warning("Semantic model initialization failed: %s", exc)
+            self.semantic_model = None
+            self.style_embeddings = None
+
+    def _style_to_text(self, style: Dict) -> str:
+        """Convert style fields into descriptive text for embedding"""
+        parts = [
+            style.get("description", ""),
+            style.get("layoutDetails", ""),
+            style.get("useCase", ""),
+            " ".join(style.get("visualElements", [])),
+            " ".join(style.get("keywords", [])),
+        ]
+        return ". ".join(filter(None, parts))
     
     def _extract_keywords(self, title: str, metrics_text: str) -> List[str]:
         """Extract keywords from title and metrics for matching"""
@@ -107,11 +142,25 @@ class ImageStyleRetriever:
         story_keywords = self._extract_keywords(title, metrics_text)
         logger.debug(f"Extracted keywords from story: {story_keywords}")
         
+        query_text = f"{title} {metrics_text}".strip()
+        query_embedding = None
+        semantic_weights = []
+        if self.semantic_model and self.style_embeddings is not None and np is not None:
+            try:
+                query_embedding = self.semantic_model.encode(query_text, normalize_embeddings=True)
+            except Exception as exc:
+                logger.warning("Failed to generate semantic embedding for prompt: %s", exc)
+                query_embedding = None
+        
         # Calculate similarity for each style
         styles_with_scores = []
-        for style in self.styles_data.get("styles", []):
-            similarity = self._calculate_similarity(story_keywords, style)
-            styles_with_scores.append((similarity, style))
+        for idx, style in enumerate(self.styles_data.get("styles", [])):
+            keyword_score = self._calculate_similarity(story_keywords, style)
+            semantic_score = 0.0
+            if query_embedding is not None and self.style_embeddings is not None:
+                semantic_score = float(np.dot(query_embedding, self.style_embeddings[idx]))
+            combined_score = (0.65 * semantic_score) + (0.35 * keyword_score)
+            styles_with_scores.append((combined_score, style))
         
         # Sort by similarity (descending)
         styles_with_scores.sort(key=lambda x: x[0], reverse=True)
@@ -127,6 +176,35 @@ class ImageStyleRetriever:
             top_styles = [default] if default else []
         
         return top_styles
+
+    def get_style_descriptors(self, styles: List[Dict]) -> List[str]:
+        """Extract positive descriptors from selected styles"""
+        descriptors = []
+        for style in styles or []:
+            descriptors.extend(style.get("visualElements", [])[:3])
+            layout = style.get("layout")
+            if layout:
+                descriptors.append(f"{layout} layout")
+            composition = style.get("composition")
+            if composition:
+                descriptors.append(f"{composition} composition")
+            if style.get("colorPalette"):
+                descriptors.append("PETRONAS teal palette")
+        return [d for d in descriptors if d]
+
+    def get_negative_cues(self, styles: List[Dict]) -> List[str]:
+        """Suggest negative prompts to avoid conflicting aesthetics"""
+        cues = set()
+        for style in styles or []:
+            layout = style.get("layout", "")
+            if layout in {"minimal", "clean"}:
+                cues.update({"cluttered layout", "busy background"})
+            if layout in {"dashboard"}:
+                cues.add("decorative illustrations")
+            if layout in {"hero", "infographic"}:
+                cues.add("photo-realistic people")
+        cues.update({"text overlays", "watermarks", "photo-realistic photography"})
+        return list(cues)
     
     def enhance_prompt(self, base_prompt: str, styles: List[Dict]) -> str:
         """

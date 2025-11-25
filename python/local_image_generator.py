@@ -97,6 +97,99 @@ except Exception as e:
     logger.warning(f"Failed to initialize RAG retriever: {e}. Continuing without RAG enhancement.")
     style_retriever = None
 
+SEMANTIC_SYNONYMS = {
+    "metrics": ["performance indicators", "impact numbers", "KPI callouts"],
+    "timeline": ["journey ribbon", "sequenced milestones"],
+    "digital": ["data mesh pattern", "tech glyphs"],
+    "safety": ["protective motifs", "safety icons"],
+    "carbon": ["low-carbon motif", "sustainability cues"],
+    "people": ["team silhouettes", "collaboration icons"],
+}
+
+DEFAULT_NEGATIVE_PROMPTS = [
+    "text",
+    "typography",
+    "lettering",
+    "watermark",
+    "logo",
+    "signature",
+    "photo-realistic",
+    "photographic",
+    "human faces",
+    "low resolution",
+    "blurry",
+    "noisy",
+    "artifact",
+    "3d render",
+    "neon glow",
+    "gradient background"
+]
+
+def expand_semantic_descriptors(title_text: str, metrics_text: str, style_descriptors: list) -> list:
+    descriptors = list(style_descriptors)
+    combined = f"{title_text.lower()} {metrics_text.lower()}"
+    for keyword, expansions in SEMANTIC_SYNONYMS.items():
+        if keyword in combined:
+            descriptors.extend(expansions)
+    seen = set()
+    unique = []
+    for desc in descriptors:
+        if desc and desc not in seen:
+            seen.add(desc)
+            unique.append(desc)
+    return unique
+
+def build_negative_prompt(style_negative_cues: list) -> str:
+    cues = DEFAULT_NEGATIVE_PROMPTS + (style_negative_cues or [])
+    deduped = []
+    seen = set()
+    for cue in cues:
+        if cue and cue not in seen:
+            seen.add(cue)
+            deduped.append(cue)
+    return ", ".join(deduped)
+
+def compose_positive_prompt(base_prompt: str, descriptors: list) -> str:
+    if not descriptors:
+        return base_prompt
+    descriptor_text = ", ".join(descriptors[:8])
+    return f"{base_prompt}. Emphasize {descriptor_text}. Keep spacing clean, corporate, and PETRONAS branded."
+
+def categorize_generation_error(error: Exception) -> str:
+    message = str(error).lower()
+    if "out of memory" in message or "cuda" in message:
+        return "oom"
+    if "timeout" in message or "deadline" in message:
+        return "timeout"
+    if "rate limit" in message:
+        return "rate_limit"
+    return "unknown"
+
+def generate_image_with_retries(prompt: str, negative_prompt: str) -> Image.Image:
+    profiles = [
+        {"width": 512, "height": 512, "num_steps": 30, "guidance_scale": 7.5},
+        {"width": 512, "height": 512, "num_steps": 24, "guidance_scale": 6.8},
+        {"width": 448, "height": 448, "num_steps": 20, "guidance_scale": 6.2},
+    ]
+    last_error = None
+    for attempt, profile in enumerate(profiles, start=1):
+        try:
+            logger.info(f"[ImageGen] Attempt {attempt}/{len(profiles)} with profile {profile}")
+            return generate_image(
+                prompt=prompt,
+                width=profile["width"],
+                height=profile["height"],
+                num_steps=profile["num_steps"],
+                guidance_scale=profile["guidance_scale"],
+                negative_prompt=negative_prompt
+            )
+        except Exception as exc:
+            category = categorize_generation_error(exc)
+            logger.warning(f"[ImageGen] Attempt {attempt} failed ({category}): {exc}")
+            last_error = exc
+            time.sleep(2)
+    raise last_error if last_error else RuntimeError("Image generation failed after retries")
+
 def get_pipeline() -> StableDiffusionPipeline:
     """Get or create the Stable Diffusion pipeline (singleton pattern)"""
     global _pipeline
@@ -153,7 +246,8 @@ def get_pipeline() -> StableDiffusionPipeline:
         raise
 
 def generate_image_via_api(prompt: str, width: int = 512, height: int = 512,
-                           num_steps: int = 30, guidance_scale: float = 7.5) -> Image.Image:
+                           num_steps: int = 30, guidance_scale: float = 7.5,
+                           negative_prompt: Optional[str] = None) -> Image.Image:
     """Generate image using Hugging Face Inference API (fallback when local model fails)"""
     if not HF_TOKEN:
         raise ValueError("HF_API_TOKEN is required for API fallback")
@@ -171,7 +265,8 @@ def generate_image_via_api(prompt: str, width: int = 512, height: int = 512,
                     "num_inference_steps": num_steps,
                     "guidance_scale": guidance_scale,
                     "width": width,
-                    "height": height
+                    "height": height,
+                    "negative_prompt": negative_prompt
                 },
                 "options": {
                     "wait_for_model": True
@@ -202,13 +297,14 @@ def generate_image_via_api(prompt: str, width: int = 512, height: int = 512,
         raise RuntimeError(f"HF API request failed: {e}")
 
 def generate_image(prompt: str, width: int = 512, height: int = 512, 
-                   num_steps: int = 50, guidance_scale: float = 7.5) -> Image.Image:
+                   num_steps: int = 50, guidance_scale: float = 7.5,
+                   negative_prompt: Optional[str] = None) -> Image.Image:
     """Generate image from prompt - uses local model or API fallback"""
     global _use_api_fallback
     
     # If we're using API fallback, use that instead
     if _use_api_fallback:
-        return generate_image_via_api(prompt, width, height, num_steps, guidance_scale)
+        return generate_image_via_api(prompt, width, height, num_steps, guidance_scale, negative_prompt)
     
     # Try to get local pipeline
     pipe = get_pipeline()
@@ -225,7 +321,8 @@ def generate_image(prompt: str, width: int = 512, height: int = 512,
             num_inference_steps=num_steps,
             guidance_scale=guidance_scale,
             width=width,
-            height=height
+            height=height,
+            negative_prompt=negative_prompt
         )
     
     return result.images[0]
@@ -320,39 +417,33 @@ def process_story(doc_id: str, story_data: dict):
         
         base_prompt = f"Corporate infographic for PETRONAS Upstream. Vertical layout. TEAL and GREEN colors. Title: {title_short}. Metrics: {metrics_short}. Flat design, minimal icons, professional."
         
+        prompt = base_prompt
+        negative_prompt = build_negative_prompt([])
+
         # Use RAG to enhance prompt with style references
         if style_retriever:
             try:
-                # Retrieve relevant styles
                 retrieved_styles = style_retriever.retrieve_styles(title, key_metrics_text, top_k=2)
-                
                 if retrieved_styles:
                     top_style = retrieved_styles[0]
                     logger.info(f"Using RAG style reference: {top_style.get('id', 'unknown')} - {top_style.get('description', '')[:50]}")
-                    
-                    # Enhance prompt with style information
-                    prompt = style_retriever.enhance_prompt(base_prompt, retrieved_styles)
+                    positive_descriptors = style_retriever.get_style_descriptors(retrieved_styles)
+                    positive_descriptors = expand_semantic_descriptors(title, key_metrics_text, positive_descriptors)
+                    prompt = compose_positive_prompt(base_prompt, positive_descriptors)
+                    negative_prompt = build_negative_prompt(style_retriever.get_negative_cues(retrieved_styles))
                 else:
-                    prompt = base_prompt
                     logger.debug("No styles retrieved, using base prompt")
             except Exception as e:
                 logger.warning(f"RAG retrieval failed: {e}. Using base prompt.")
-                prompt = base_prompt
         else:
-            prompt = base_prompt
             logger.debug("RAG retriever not available, using base prompt")
         
         logger.info(f"Generating image for: {title}")
         logger.debug(f"Final prompt: {prompt[:150]}...")  # Log first 150 chars
+        logger.debug(f"Negative prompt: {negative_prompt}")
         
-        # Generate image
-        image = generate_image(
-            prompt=prompt,
-            width=512,
-            height=512,
-            num_steps=30,  # Faster for local generation
-            guidance_scale=7.5
-        )
+        # Generate image with graceful degradation
+        image = generate_image_with_retries(prompt, negative_prompt)
         
         # Upload to storage
         filename = f"{IMAGE_FOLDER}/{doc_id}_{int(time.time())}.png"
@@ -377,13 +468,15 @@ def process_story(doc_id: str, story_data: dict):
         return True
         
     except Exception as e:
-        logger.error(f"❌ Error processing story {doc_id}: {e}", exc_info=True)
+        error_category = categorize_generation_error(e)
+        logger.error(f"❌ Error processing story {doc_id}: {e} (category: {error_category})", exc_info=True)
         
         # Update Firestore with error
         try:
             doc_ref = db.collection("stories").document(doc_id)
             doc_ref.update({
                 "aiGeneratedImageUrl": f"Error: {str(e)}",
+                "imageGenerationErrorCategory": error_category,
                 "imageGeneratedAt": firestore.SERVER_TIMESTAMP
             })
         except:

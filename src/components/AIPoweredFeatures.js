@@ -18,13 +18,7 @@ import {
 
 /**
  * AI-Powered Features Component
- * 
  * Orbiting design with circular gradient cards orbiting around center logo
- * - Glass-morphism background
- * - Smooth orbital rotation animations
- * - Connection lines to center
- * - Enhanced hover effects
- * - Gradient cards matching website theme
  */
 
 const AI_FEATURES = [
@@ -101,12 +95,6 @@ export default function AIPoweredFeatures() {
   const [hoveredCard, setHoveredCard] = useState(null);
   const [mounted, setMounted] = useState(false);
 
-  // Set mounted flag after component mounts (client-side only)
-  // This is necessary to prevent hydration mismatches with rotation animations.
-  // 
-  // Note: This is a standard Next.js pattern for handling client-only features.
-  // The performance impact is minimal (single boolean flag set once on mount)
-  // and this pattern is recommended in Next.js documentation for preventing hydration errors.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
@@ -123,7 +111,6 @@ export default function AIPoweredFeatures() {
     return () => clearInterval(rotationInterval);
   }, [mounted]);
 
-
   return (
     <div className="relative w-full py-12 md:py-16 bg-gradient-to-br from-slate-50 via-cyan-50 to-teal-50" suppressHydrationWarning>
       {/* Animated mesh gradient background */}
@@ -132,7 +119,6 @@ export default function AIPoweredFeatures() {
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000" />
         <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000" />
       </div>
-
 
       {/* Heading */}
       <motion.div
@@ -239,7 +225,7 @@ export default function AIPoweredFeatures() {
             >
               {/* Orbital System */}
               <div className="relative h-[600px] flex items-center justify-center overflow-hidden">
-                {/* Orbital rings with rotation - always render to prevent hydration mismatch */}
+                {/* Orbital rings with rotation */}
                 <div 
                   className="absolute w-[320px] h-[320px] rounded-full"
                   style={{
@@ -261,7 +247,6 @@ export default function AIPoweredFeatures() {
 
                 {/* Center Hub with Systemic Shifts Logo */}
                 <div className="relative z-20">
-                  {/* Glow effect */}
                   <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl" />
                   
                   <motion.div
@@ -290,8 +275,10 @@ export default function AIPoweredFeatures() {
                   const radius = 160;
                   const currentAngle = mounted ? feature.angle + rotation : feature.angle;
                   const radians = (currentAngle * Math.PI) / 180;
-                  const x = Math.cos(radians) * radius;
-                  const y = Math.sin(radians) * radius;
+                  
+                  const x = (Math.cos(radians) * radius).toFixed(3);
+                  const y = (Math.sin(radians) * radius).toFixed(3);
+                  
                   const isHovered = hoveredCard === feature.id;
 
                   return (
@@ -307,7 +294,6 @@ export default function AIPoweredFeatures() {
                       onMouseLeave={() => setHoveredCard(null)}
                     >
                       <div className="relative">
-                        {/* Glow on hover */}
                         {isHovered && (
                           <div 
                             className={`absolute inset-0 rounded-full bg-gradient-to-br ${feature.gradient} blur-xl opacity-70`}
@@ -315,7 +301,6 @@ export default function AIPoweredFeatures() {
                           />
                         )}
                         
-                        {/* Circle indicator */}
                         <div 
                           className={`relative w-16 h-16 rounded-full bg-gradient-to-br ${feature.gradient} shadow-2xl flex items-center justify-center border-4 border-white/50 transition-all duration-300`}
                           style={{
@@ -326,7 +311,6 @@ export default function AIPoweredFeatures() {
                         >
                           <feature.icon className="text-white w-8 h-8 drop-shadow-2xl" />
                           
-                          {/* Pulsing ring */}
                           {isHovered && (
                             <div
                               className="absolute inset-0 rounded-full border-2 border-white/50"
@@ -346,8 +330,10 @@ export default function AIPoweredFeatures() {
                   const radius = 160;
                   const currentAngle = mounted ? feature.angle + rotation : feature.angle;
                   const radians = (currentAngle * Math.PI) / 180;
-                  const x = Math.cos(radians) * radius;
-                  const y = Math.sin(radians) * radius;
+                  
+                  const x = (Math.cos(radians) * radius).toFixed(3);
+                  const y = (Math.sin(radians) * radius).toFixed(3);
+                  
                   const isHovered = hoveredCard === feature.id;
 
                   return (
@@ -379,55 +365,6 @@ export default function AIPoweredFeatures() {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes blob {
-          0%, 100% { 
-            transform: translate(0, 0) scale(1); 
-          }
-          25% { 
-            transform: translate(20px, -20px) scale(1.1); 
-          }
-          50% { 
-            transform: translate(-20px, 20px) scale(0.9); 
-          }
-          75% { 
-            transform: translate(20px, 20px) scale(1.05); 
-          }
-        }
-        
-        @keyframes float {
-          0%, 100% { 
-            transform: translateY(0px); 
-          }
-          50% { 
-            transform: translateY(-20px); 
-          }
-        }
-        
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
-        }
-        
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-        
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-      `}</style>
     </div>
   );
 }

@@ -357,7 +357,7 @@ export default function KeyShifts() {
                 {/* Popup Content - Using Image */}
                 <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white" style={{ maxHeight: 'calc(90vh - 2rem)' }}>
                   <Image
-                    src="/key-shifts-10-shifts-flow.png"
+                    src="/key-shifts/10-shifts-flow.png"
                     alt="10 Shifts - Differentiated outcomes for 30% value improvement by 2035"
                     width={1200}
                     height={1800}

@@ -24,7 +24,7 @@ const mockArticles = [
     category: 'systemic-shifts',
     categoryLabel: 'Systemic Shifts',
     date: '2025-01-20',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-1.jpg'
   },
   {
     id: 2,
@@ -33,7 +33,7 @@ const mockArticles = [
     category: 'systemic-shifts',
     categoryLabel: 'Systemic Shifts',
     date: '2025-01-15',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-2.jpg'
   },
   {
     id: 3,
@@ -42,7 +42,7 @@ const mockArticles = [
     category: 'systemic-shifts',
     categoryLabel: 'Systemic Shifts',
     date: '2025-01-10',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-3.jpg'
   },
   // Jukris Lens Articles
   {
@@ -52,7 +52,7 @@ const mockArticles = [
     category: 'jukris-lens',
     categoryLabel: 'Jukris Lens',
     date: '2025-01-18',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-4.jpg'
   },
   {
     id: 5,
@@ -61,7 +61,7 @@ const mockArticles = [
     category: 'jukris-lens',
     categoryLabel: 'Jukris Lens',
     date: '2025-01-12',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-5.jpg'
   },
   // UpstreamBuzz Articles
   {
@@ -71,7 +71,7 @@ const mockArticles = [
     category: 'upstreambuzz',
     categoryLabel: 'UpstreamBuzz',
     date: '2025-01-22',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-1.jpg'
   },
   {
     id: 7,
@@ -80,7 +80,7 @@ const mockArticles = [
     category: 'upstreambuzz',
     categoryLabel: 'UpstreamBuzz',
     date: '2025-01-16',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-2.jpg'
   },
   {
     id: 8,
@@ -89,7 +89,7 @@ const mockArticles = [
     category: 'upstreambuzz',
     categoryLabel: 'UpstreamBuzz',
     date: '2025-01-08',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-3.jpg'
   },
   // PETRONAS 2.0 Articles
   {
@@ -99,7 +99,7 @@ const mockArticles = [
     category: 'petronas-2.0',
     categoryLabel: 'PETRONAS 2.0',
     date: '2025-01-19',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-4.jpg'
   },
   {
     id: 10,
@@ -108,7 +108,7 @@ const mockArticles = [
     category: 'petronas-2.0',
     categoryLabel: 'PETRONAS 2.0',
     date: '2025-01-14',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-5.jpg'
   },
   {
     id: 11,
@@ -117,7 +117,7 @@ const mockArticles = [
     category: 'petronas-2.0',
     categoryLabel: 'PETRONAS 2.0',
     date: '2025-01-07',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-1.jpg'
   },
   // Trending Articles
   {
@@ -127,7 +127,7 @@ const mockArticles = [
     category: 'trending',
     categoryLabel: 'Trending',
     date: '2025-01-23',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-2.jpg'
   },
   {
     id: 13,
@@ -136,7 +136,7 @@ const mockArticles = [
     category: 'trending',
     categoryLabel: 'Trending',
     date: '2025-01-21',
-    image: '/images/highlight-placeholder.jpg'
+    image: '/ArticleThumbnail/Thumbnail-3.jpg'
   }
 ];
 

@@ -6,11 +6,40 @@
  */
 
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 const { generateEmbedding, cosineSimilarity } = require('./embeddingsHelper');
 
 // Lazy getter for Firestore (initialized in index.js)
 function getDb() {
   return admin.firestore();
+}
+
+const DEFAULT_SIMILARITY_THRESHOLDS = {
+  general: 0.3,
+  chat: 0.28,
+  podcast: 0.27,
+  writeup: 0.32
+};
+const CACHE_COLLECTION = 'ragQueryCache';
+const CACHE_TTL_MINUTES = 30;
+
+function getAdaptiveSimilarityThreshold(query = '', queryType = 'general', override = null) {
+  if (typeof override === 'number' && !Number.isNaN(override)) {
+    return Math.min(Math.max(override, 0), 1);
+  }
+
+  const base = DEFAULT_SIMILARITY_THRESHOLDS[queryType] ?? DEFAULT_SIMILARITY_THRESHOLDS.general;
+  const queryLength = query.length;
+
+  if (queryLength < 80) {
+    return Math.min(base + 0.07, 0.5);
+  }
+
+  if (queryLength > 300) {
+    return Math.max(base - 0.07, 0.2);
+  }
+
+  return base;
 }
 
 class ChatbotRAGRetriever {
@@ -24,11 +53,22 @@ class ChatbotRAGRetriever {
    * @param {object} keys - API keys for embeddings { openai, openrouter }
    * @param {number} topK - Number of documents to retrieve (default: 3)
    * @param {string[]} categories - Optional categories to filter by
+   * @param {object} options - Optional configuration { minSimilarity, queryType, adaptive }
    * @returns {Promise<Array>} Array of relevant documents with similarity scores
    */
-  async retrieveRelevantDocuments(query, keys, topK = 3, categories = null) {
+  async retrieveRelevantDocuments(query, keys, topK = 3, categories = null, options = {}) {
     try {
       console.log(`[ChatbotRAG] Retrieving documents for query: "${query.substring(0, 100)}..."`);
+
+      const useCache = options.useCache !== false;
+      const cacheKey = useCache ? this._buildCacheKey(query, categories, options.queryType) : null;
+      if (useCache && cacheKey) {
+        const cached = await this._getCachedDocuments(cacheKey);
+        if (cached) {
+          console.log('[ChatbotRAG] Cache hit for query');
+          return cached;
+        }
+      }
 
       // Generate embedding for the query
       const queryEmbedding = await generateEmbedding(query, keys);
@@ -52,12 +92,23 @@ class ChatbotRAGRetriever {
       }
 
       console.log(`[ChatbotRAG] Found ${snapshot.size} documents to search`);
+      const documents = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ref: doc.ref,
+        data: doc.data()
+      }));
+
+      const docsMissingEmbeddings = documents.filter(doc => !doc.data.embedding || !Array.isArray(doc.data.embedding));
+      if (docsMissingEmbeddings.length > 0) {
+        console.log(`[ChatbotRAG] ${docsMissingEmbeddings.length} documents missing embeddings, generating in parallel...`);
+        await this._populateMissingEmbeddings(docsMissingEmbeddings, keys);
+      }
 
       // Calculate similarity for each document
       const documentsWithScores = [];
       
-      for (const doc of snapshot.docs) {
-        const docData = doc.data();
+      for (const doc of documents) {
+        const docData = doc.data;
         
         // Skip if no embedding exists
         if (!docData.embedding || !Array.isArray(docData.embedding)) {
@@ -97,22 +148,31 @@ class ChatbotRAGRetriever {
         });
       }
 
+      const similarityThreshold = getAdaptiveSimilarityThreshold(
+        query,
+        options.queryType,
+        options.minSimilarity
+      );
+      console.log(`[ChatbotRAG] Similarity threshold resolved to ${similarityThreshold.toFixed(3)} (queryType=${options.queryType || 'general'})`);
+
       // Sort by similarity (descending) and return top K
       documentsWithScores.sort((a, b) => b.similarity - a.similarity);
-      
-      // Filter by minimum similarity threshold (0.3 is a reasonable threshold)
-      const MIN_SIMILARITY_THRESHOLD = 0.3;
-      const filteredDocuments = documentsWithScores.filter(doc => doc.similarity >= MIN_SIMILARITY_THRESHOLD);
+
+      const filteredDocuments = documentsWithScores.filter(doc => doc.similarity >= similarityThreshold);
       const topDocuments = filteredDocuments.slice(0, topK);
 
-      console.log(`[ChatbotRAG] Retrieved ${topDocuments.length} relevant documents (from ${documentsWithScores.length} total, threshold: ${MIN_SIMILARITY_THRESHOLD})`);
+      console.log(`[ChatbotRAG] Retrieved ${topDocuments.length} relevant documents (from ${documentsWithScores.length} total, threshold: ${similarityThreshold.toFixed(3)})`);
       if (topDocuments.length > 0) {
         console.log(`[ChatbotRAG] Top match: "${topDocuments[0].title}" (similarity: ${topDocuments[0].similarity.toFixed(3)})`);
         topDocuments.forEach((doc, idx) => {
           console.log(`[ChatbotRAG]   ${idx + 1}. "${doc.title}" - similarity: ${doc.similarity.toFixed(3)}`);
         });
       } else {
-        console.warn(`[ChatbotRAG] No documents met similarity threshold of ${MIN_SIMILARITY_THRESHOLD}. Highest similarity: ${documentsWithScores.length > 0 ? documentsWithScores[0].similarity.toFixed(3) : 'N/A'}`);
+        console.warn(`[ChatbotRAG] No documents met similarity threshold of ${similarityThreshold.toFixed(3)}. Highest similarity: ${documentsWithScores.length > 0 ? documentsWithScores[0].similarity.toFixed(3) : 'N/A'}`);
+      }
+
+      if (useCache && cacheKey) {
+        await this._setCachedDocuments(cacheKey, topDocuments);
       }
 
       return topDocuments;
@@ -129,33 +189,61 @@ class ChatbotRAGRetriever {
    * @param {number} maxLength - Maximum length of context string (default: 3000)
    * @returns {string} Formatted context string
    */
-  buildContextString(documents, maxLength = 3000) {
+  buildContextString(documents, options = {}) {
     if (!documents || documents.length === 0) {
       return '';
     }
 
+    const maxTokens = Math.max(options.maxTokens || 750, 200);
+    const approxCharsPerToken = 4;
+
     let context = '=== RELEVANT KNOWLEDGE BASE INFORMATION (PRIORITY SOURCE) ===\n\n';
-    let currentLength = context.length;
+    let tokensUsed = Math.ceil(context.length / approxCharsPerToken);
 
     for (let i = 0; i < documents.length; i++) {
       const doc = documents[i];
-      const similarityNote = `[Similarity: ${(doc.similarity * 100).toFixed(1)}%]`;
-      const docText = `Document ${i + 1}: ${doc.title} ${similarityNote}\n${doc.content}\nSource: ${doc.sourceUrl || doc.source || 'Internal Knowledge Base'}\n\n`;
-      
-      if (currentLength + docText.length > maxLength) {
-        // Truncate content if needed
-        const remainingLength = maxLength - currentLength - 50; // Leave room for truncation marker
-        if (remainingLength > 0) {
-          context += `Document ${i + 1}: ${doc.title} ${similarityNote}\n${doc.content.substring(0, remainingLength)}...\nSource: ${doc.sourceUrl || doc.source || 'Internal Knowledge Base'}\n\n`;
-        }
+      const similarityNote = doc.similarity != null
+        ? `[Similarity: ${(doc.similarity * 100).toFixed(1)}%]`
+        : '';
+      const sourceText = doc.sourceUrl || doc.source || 'Internal Knowledge Base';
+      const docHeader = `Document ${i + 1}: ${doc.title} ${similarityNote}\n`;
+      const docFooter = `\nSource: ${sourceText}\n\n`;
+
+      const headerTokens = Math.ceil(docHeader.length / approxCharsPerToken);
+      const footerTokens = Math.ceil(docFooter.length / approxCharsPerToken);
+
+      if (tokensUsed + headerTokens >= maxTokens) {
         break;
       }
-      
-      context += docText;
-      currentLength += docText.length;
+
+      context += docHeader;
+      tokensUsed += headerTokens;
+
+      const remainingTokens = maxTokens - tokensUsed - footerTokens;
+      if (remainingTokens <= 0) {
+        context += '...[context truncated]\n';
+        tokensUsed = maxTokens;
+        break;
+      }
+
+      const maxDocChars = remainingTokens * approxCharsPerToken;
+      const docContent = (doc.content || '').substring(0, maxDocChars);
+      context += docContent;
+      tokensUsed += Math.ceil(docContent.length / approxCharsPerToken);
+
+      if (docContent.length < (doc.content || '').length) {
+        context += '...\n';
+        tokensUsed = maxTokens;
+        context += docFooter;
+        break;
+      }
+
+      context += docFooter;
+      tokensUsed += footerTokens;
     }
 
     context += '=== END KNOWLEDGE BASE INFORMATION ===\n\n';
+    console.log(`[ChatbotRAG] Context window built using ~${tokensUsed} tokens (limit ${maxTokens})`);
     return context.trim();
   }
 
@@ -173,71 +261,57 @@ class ChatbotRAGRetriever {
       let processed = 0;
       let skipped = 0;
       let errors = 0;
-      let batch = db.batch();
-      let batchCount = 0;
 
       console.log(`[ChatbotRAG] Found ${snapshot.docs.length} documents in knowledge base`);
+      const documents = snapshot.docs.map(doc => ({ id: doc.id, ref: doc.ref, data: doc.data() }));
+      const docsToProcess = documents.filter(doc => 
+        forceRegenerate || !doc.data.embedding || !Array.isArray(doc.data.embedding) || doc.data.embedding.length === 0
+      );
+      skipped = documents.length - docsToProcess.length;
 
-      for (const doc of snapshot.docs) {
-        const docData = doc.data();
-        
-        // Skip if embedding already exists (unless forcing regeneration)
-        if (!forceRegenerate && docData.embedding && Array.isArray(docData.embedding) && docData.embedding.length > 0) {
-          skipped++;
-          continue;
-        }
+      for (let i = 0; i < docsToProcess.length; i += batchSize) {
+        const chunk = docsToProcess.slice(i, i + batchSize);
+        console.log(`[ChatbotRAG] Processing embedding chunk ${i / batchSize + 1}/${Math.ceil(docsToProcess.length / batchSize)}`);
+        const chunkResults = await Promise.all(chunk.map(async doc => {
+          const docData = doc.data;
+          if (!docData.title || !docData.content) {
+            console.warn(`[ChatbotRAG] Skipping ${doc.id} - missing title or content`);
+            return { status: 'error' };
+          }
+          try {
+            const text = `${docData.title}\n${docData.content}`.substring(0, 8000);
+            if (!text.trim()) {
+              console.warn(`[ChatbotRAG] Skipping ${doc.id} - empty text`);
+              return { status: 'error' };
+            }
+            const embedding = await generateEmbedding(text, keys);
+            if (!embedding || !Array.isArray(embedding) || embedding.length === 0) {
+              console.error(`[ChatbotRAG] Invalid embedding returned for ${doc.id}`);
+              return { status: 'error' };
+            }
+            docData.embedding = embedding;
+            return { status: 'ok', doc };
+          } catch (err) {
+            console.error(`[ChatbotRAG] Error processing ${doc.id}:`, err.message);
+            return { status: 'error' };
+          }
+        }));
 
-        // Validate required fields
-        if (!docData.title || !docData.content) {
-          console.warn(`[ChatbotRAG] Skipping ${doc.id} - missing title or content`);
-          errors++;
-          continue;
-        }
-
-        try {
-          const text = `${docData.title}\n${docData.content}`.substring(0, 8000);
-          if (!text || text.trim().length === 0) {
-            console.warn(`[ChatbotRAG] Skipping ${doc.id} - empty text`);
+        const batch = db.batch();
+        chunkResults.forEach(result => {
+          if (result.status === 'ok') {
+            processed++;
+            batch.update(result.doc.ref, {
+              embedding: result.doc.data.embedding,
+              embeddingUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          } else {
             errors++;
-            continue;
           }
-
-          console.log(`[ChatbotRAG] Generating embedding for ${doc.id}: "${docData.title}"`);
-          const embedding = await generateEmbedding(text, keys);
-          
-          if (!embedding || !Array.isArray(embedding) || embedding.length === 0) {
-            console.error(`[ChatbotRAG] Invalid embedding returned for ${doc.id}`);
-            errors++;
-            continue;
-          }
-          
-          batch.update(doc.ref, {
-            embedding: embedding,
-            embeddingUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
-          });
-          
-          batchCount++;
-          processed++;
-
-          // Commit batch every batchSize documents
-          if (batchCount >= batchSize) {
-            await batch.commit();
-            batch = db.batch();
-            batchCount = 0;
-            console.log(`[ChatbotRAG] Processed ${processed} documents (skipped: ${skipped}, errors: ${errors})...`);
-            
-            // Small delay to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        } catch (error) {
-          console.error(`[ChatbotRAG] Error processing ${doc.id}:`, error.message, error.stack);
-          errors++;
-        }
-      }
-
-      // Commit remaining batch
-      if (batchCount > 0) {
+        });
         await batch.commit();
+        console.log(`[ChatbotRAG] Processed ${processed} documents (skipped: ${skipped}, errors: ${errors})...`);
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
 
       console.log(`[ChatbotRAG] Generated embeddings for ${processed} documents (skipped: ${skipped}, errors: ${errors})`);
@@ -246,6 +320,75 @@ class ChatbotRAGRetriever {
     } catch (error) {
       console.error('[ChatbotRAG] Error generating embeddings:', error);
       throw error;
+    }
+  }
+
+  _buildCacheKey(query, categories, queryType) {
+    const hash = crypto.createHash('sha1');
+    hash.update(`${queryType || 'general'}|${query}|${(categories || []).join(',')}`);
+    return hash.digest('hex');
+  }
+
+  async _getCachedDocuments(cacheKey) {
+    try {
+      const docRef = await getDb().collection(CACHE_COLLECTION).doc(cacheKey).get();
+      if (!docRef.exists) {
+        return null;
+      }
+      const data = docRef.data();
+      if (!data || !data.expiresAt) {
+        await docRef.ref.delete();
+        return null;
+      }
+      const expiresAt = data.expiresAt.toDate();
+      if (expiresAt < new Date()) {
+        await docRef.ref.delete();
+        return null;
+      }
+      return data.documents || null;
+    } catch (err) {
+      console.warn('[ChatbotRAG] Failed to read cache:', err.message);
+      return null;
+    }
+  }
+
+  async _setCachedDocuments(cacheKey, documents) {
+    try {
+      const expiresAt = admin.firestore.Timestamp.fromDate(
+        new Date(Date.now() + CACHE_TTL_MINUTES * 60 * 1000)
+      );
+      await getDb().collection(CACHE_COLLECTION).doc(cacheKey).set({
+        documents,
+        expiresAt,
+        cachedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (err) {
+      console.warn('[ChatbotRAG] Failed to write cache:', err.message);
+    }
+  }
+
+  async _populateMissingEmbeddings(docWrappers, keys) {
+    const chunkSize = 3;
+    for (let i = 0; i < docWrappers.length; i += chunkSize) {
+      const chunk = docWrappers.slice(i, i + chunkSize);
+      await Promise.all(chunk.map(async wrapper => {
+        const docData = wrapper.data;
+        try {
+          const text = `${docData.title || ''}\n${docData.content || ''}`.substring(0, 8000);
+          if (!text.trim()) {
+            return;
+          }
+          const embedding = await generateEmbedding(text, keys);
+          docData.embedding = embedding;
+          await wrapper.ref.update({
+            embedding,
+            embeddingUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+        } catch (err) {
+          console.warn(`[ChatbotRAG] Failed to generate embedding for ${wrapper.id}: ${err.message}`);
+        }
+      }));
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
   }
 }

@@ -1,0 +1,30 @@
+{
+  "version": 1.1,
+  "atDirectives": [
+    {
+      "name": "@tailwind",
+      "description": "Use the @tailwind directive to insert Tailwind's base, components, utilities and variants styles into your CSS.",
+      "references": [
+        {
+          "name": "Tailwind CSS Documentation",
+          "url": "https://tailwindcss.com/docs"
+        }
+      ]
+    },
+    {
+      "name": "@theme",
+      "description": "Use the @theme directive to define custom design tokens in your CSS.",
+      "references": [
+        {
+          "name": "Tailwind CSS v4 Documentation",
+          "url": "https://tailwindcss.com/docs"
+        }
+      ]
+    },
+    {
+      "name": "@import",
+      "description": "Import Tailwind CSS"
+    }
+  ]
+}
+

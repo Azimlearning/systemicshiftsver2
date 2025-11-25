@@ -21,28 +21,29 @@ export default function MindsetBehaviour() {
 
   // More Risk Tolerant data (Image 1)
   const riskTolerantData = {
-    philosophy: "Sees CHANGE as strength in building culture of innovation, agility, and growth by adapting quickly to challenges. Stretch ourselves beyond comfort zones, and see failures as steps toward progress.",
+    philosophy: "Embrace growth by enabling bold yet thoughtful decisions, encouraging innovation and impactful improvement. Empowered to take initiative within a safe environment, with leaders promoting experimentation, rewarding boldness, and viewing failure as progress.",
     applicationExamples: [
-      "The organisation continues to promote innovation and accept failure as lesson learnt. Openly admitting the gaps and working on resolution instead of finding fault."
+      "Business linking choice to Long–Term value be it in Upstream Portfolio Management or any independent projects.",
+      "Leaders to celebrate any new ideas from the juniors without having bias and scepticism."
     ],
     roles: [
       {
         id: 'learning',
-        title: "Leaders Role Model a Learning Attitude.",
-        description: "Openly reflect on mistakes, share learning journeys, and show humility in not knowing everything while reframe setbacks as growth opportunities.",
-        image: "/SystemicShiftsDiagrams_pages/mindset-risk-tolerant-content.png"
+        title: "Leaders to Role Model a Risk-Taking Attitude.",
+        description: "Leaders to demonstrate bold and transparent decisions by showing how calculated risks are evaluated/taken.",
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-1.webp" // Placeholder(stock image)
       },
       {
         id: 'feedback',
-        title: "Continue to Give Actionable Feedback.",
-        description: "Offer constructive input focused on growth, not just evaluation and seek feedback without defensiveness; view it as a tool for self-growth.",
-        image: "/mindset-risk-tolerant-content.png" // Placeholder
+        title: "Encourage Speak Up with Ideas.",
+        description: "Encourage openness, accept honest mistakes, and protect those who take initiative by recognising both success and effort in experimentation and celebrate smart failures.",
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-2.jpg" // Placeholder(stock image)
       },
       {
         id: 'comfort',
-        title: "Challenge Comfort Zones.",
-        description: "Push teams to take on new challenges and grow beyond the familiar and willingly take on unfamiliar tasks or roles to develop new capabilities as initiative to learn new skills.",
-        image: "/mindset-risk-tolerant-content.png" // Placeholder
+        title: "Support Peers in Trying.",
+        description: "Encourage teammates to take initiative, and create a safe space for experimentation.",
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-4.jpg" // Placeholder(stock image)
       }
     ]
   };
@@ -59,48 +60,48 @@ export default function MindsetBehaviour() {
         id: 'strategy',
         title: "Leaders to Set a Clear Value-Driven Strategy.",
         description: "Define and communicate where the business wins and how value is created. Focus resources on what drives growth or efficiency and stop low-value work.",
-        image: "/SystemicShiftsDiagrams_pages/mindset-commercial-savvy-content.png"
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-5.jpg"  // Placeholder(stock image)
       },
       {
         id: 'tradeoffs',
         title: "Make Smart Trade-Offs and Opportunity Oriented.",
         description: "Prioritise work that has the highest impact, find efficiencies, eliminate waste, suggest ways to grow and avoid perfectionism in low-value areas.",
-        image: "/SystemicShiftsDiagrams_pages/mindset-commercial-savvy-content.png"
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-6.jpg"  // Placeholder(stock image)
       },
       {
         id: 'owner',
         title: "Act Like an Owner.",
         description: "Develop business acumen in team, coach and mentor team to understand value chain and think beyond their function.",
-        image: "/SystemicShiftsDiagrams_pages/mindset-commercial-savvy-content.png"
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-7.jpg" // Placeholder(stock image)
       }
     ]
   };
 
   // Growth Mindset data (Image 3)
   const growthMindsetData = {
-    philosophy: "Embrace growth by enabling bold yet thoughtful decisions, encouraging innovation and impactful improvement. Empowered to take initiative within a safe environment, with leaders promoting experimentation, rewarding boldness, and viewing failure as progress.",
+    philosophy: "Sees CHANGE as strength in building culture of innovation, agility, and growth by adapting quickly to challenges. Stretch ourselves beyond comfort zones, and see failures as steps toward progress.",
     applicationExamples: [
-      "Business linking choice to Long-Term value be it in Upstream Portfolio Management or any independent projects.",
-      "Leaders to celebrate any new ideas from the juniors without having bias and scepticism."
+      "The organisation continues to promote innovation and accept failure as lesson learnt.",
+      "Openly admitting the gaps and working on resolution instead of finding fault."
     ],
     roles: [
       {
         id: 'risk-taking',
-        title: "Leaders to Role Model a Risk-Taking Attitude.",
-        description: "Leaders to demonstrate bold and transparent decisions by showing how calculated risks are evaluated/taken.",
-        image: "/SystemicShiftsDiagrams_pages/mindset-growth-mindset-content.png"
+        title: "Leaders Role Model a Learning Attitude.",
+        description: "Openly reflect on mistakes, share learning journeys, and show humility in not knowing everything while reframe setbacks as growth opportunities.",
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-8.jpg" // Placeholder(stock image)
       },
       {
         id: 'speak-up',
-        title: "Encourage Speak Up with Ideas.",
-        description: "Encourage openness, accept honest mistakes, and protect those who take initiative by recognising both success and effort in experimentation and celebrate smart failures.",
-        image: "/SystemicShiftsDiagrams_pages/mindset-growth-mindset-content.png"
+        title: "Continue to Give Actionable Feedback.",
+        description: "Offer constructive input focused on growth, not just evaluation and seek feedback without defensiveness; view it as a tool for self-growth.",
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-9.jpg"  // Placeholder(stock image)
       },
       {
         id: 'support',
-        title: "Support Peers in Trying.",
-        description: "Encourage teammates to take initiative, and create a safe space for experimentation.",
-        image: "/SystemicShiftsDiagrams_pages/mindset-growth-mindset-content.png"
+        title: "Challenge Comfort Zones.",
+        description: "Push teams to take on new challenges and grow beyond the familiar and willingly take on unfamiliar tasks or roles to develop new capabilities as initiative to learn new skills.",
+        image: "/SystemicShiftsDiagrams_pages/mindset&behaviour/stock-image-5.jpg" // Placeholder(stock image)
       }
     ]
   };

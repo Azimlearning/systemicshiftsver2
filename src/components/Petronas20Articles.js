@@ -1,8 +1,9 @@
 // src/components/Petronas20Articles.js
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
 import { motion } from 'framer-motion';
-import Image from 'next/image';
+// Using regular img tag to avoid Next.js Image validation issues with local images
 import Link from 'next/link';
 import { FaArrowRight } from 'react-icons/fa';
 
@@ -18,7 +19,7 @@ export default function Petronas20Articles() {
       id: 1,
       title: 'The Path to Integrated Energy Company',
       excerpt: 'Exploring how PETRONAS is transforming into an integrated energy company by 2035, focusing on competitive upstream, reliable LNG supply, and energy solutions.',
-      image: '/images/highlight-placeholder.jpg',
+      image: '/ArticleThumbnail/Thumbnail-1.jpg',
       date: '2025-01-15',
       link: '/articles'
     },
@@ -26,7 +27,7 @@ export default function Petronas20Articles() {
       id: 2,
       title: 'Sustainable Energy Solutions for Tomorrow',
       excerpt: 'Discover our commitment to providing safe, reliable, and sustainable energy solutions that meet the world\'s evolving needs.',
-      image: '/images/highlight-placeholder.jpg',
+      image: '/ArticleThumbnail/Thumbnail-2.jpg',
       date: '2025-01-10',
       link: '/articles'
     },
@@ -34,7 +35,7 @@ export default function Petronas20Articles() {
       id: 3,
       title: 'Innovation in Upstream Operations',
       excerpt: 'Learn about the latest technological advancements and strategic initiatives driving our competitive upstream operations forward.',
-      image: '/images/highlight-placeholder.jpg',
+      image: '/ArticleThumbnail/Thumbnail-3.jpg',
       date: '2025-01-05',
       link: '/articles'
     },
@@ -42,7 +43,7 @@ export default function Petronas20Articles() {
       id: 4,
       title: 'Global LNG Leadership',
       excerpt: 'Understanding our role as a reliable global LNG supplier and how we\'re expanding our reach to serve customers worldwide.',
-      image: '/images/highlight-placeholder.jpg',
+      image: '/ArticleThumbnail/Thumbnail-4.jpg',
       date: '2024-12-28',
       link: '/articles'
     }
@@ -80,11 +81,16 @@ export default function Petronas20Articles() {
               <Link href={article.link}>
                 <div className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 h-full flex flex-col border border-gray-200 hover:border-teal-300">
                   <div className="relative h-48 overflow-hidden">
-                    <Image
+                    <img
                       src={article.image}
                       alt={article.title}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        // Fallback to stock image if original fails
+                        if (e.target.src !== '/ArticleThumbnail/Thumbnail-1.jpg') {
+                          e.target.src = '/ArticleThumbnail/Thumbnail-1.jpg';
+                        }
+                      }}
                     />
                   </div>
                   <div className="p-6 flex-grow flex flex-col">

@@ -3,6 +3,7 @@
 const { generateWithFallback } = require("./aiHelper");
 const { generatePodcastAudio } = require("./podcastTTS");
 const { ChatbotRAGRetriever } = require("./chatbotRAGRetriever");
+const { sanitizePromptInput, detectPromptInjection, buildSecurityNotice } = require("./promptSecurity");
 
 /**
  * Generates a podcast script based on a topic and optional context.
@@ -28,6 +29,22 @@ function createGeneratePodcastHandler(geminiApiKey, openRouterApiKey) {
           return res.status(400).send({ error: "topic (string) is required." });
         }
 
+        const sanitizedTopic = sanitizePromptInput(topic, 500);
+        if (!sanitizedTopic) {
+          return res.status(400).send({ error: "topic (string) is required." });
+        }
+        const sanitizedContext = context ? sanitizePromptInput(context, 2000) : '';
+        const injectionSignals = [
+          ...detectPromptInjection(topic),
+          ...(context ? detectPromptInjection(context) : [])
+        ];
+        if (injectionSignals.length) {
+          console.warn(`[generatePodcast] Potential prompt injection detected: ${injectionSignals.join(', ')}`);
+        }
+        const securityNotice = buildSecurityNotice(injectionSignals);
+        const requestId = createRequestId('pod');
+        const logPrefix = `[generatePodcast][${requestId}]`;
+
         const keys = {
           gemini: geminiApiKey.value(),
           openrouter: openRouterApiKey.value()
@@ -37,7 +54,7 @@ function createGeneratePodcastHandler(geminiApiKey, openRouterApiKey) {
         return res.status(500).send({ error: "AI API keys not configured." });
       }
 
-      console.log(`[generatePodcast] Generating podcast for topic: ${topic.substring(0, 100)}`);
+        console.log(`${logPrefix} Generating podcast for topic: ${sanitizedTopic.substring(0, 100)}`);
 
       // Use RAG to retrieve relevant knowledge base documents
       let knowledgeContext = '';
@@ -53,33 +70,41 @@ function createGeneratePodcastHandler(geminiApiKey, openRouterApiKey) {
 
       try {
         // Build query from topic and context
-        const ragQuery = context 
-          ? `${topic}. ${context}`.trim()
-          : topic.trim();
+        const ragQuery = sanitizedContext
+          ? `${sanitizedTopic}. ${sanitizedContext}`.trim()
+          : sanitizedTopic.trim();
         
         ragMetadata.query = ragQuery;
-        console.log(`[generatePodcast] ===== RAG RETRIEVAL START =====`);
-        console.log(`[generatePodcast] Query: "${ragQuery}"`);
-        console.log(`[generatePodcast] Query length: ${ragQuery.length} characters`);
+        console.log(`${logPrefix} ===== RAG RETRIEVAL START =====`);
+        console.log(`${logPrefix} Query: "${ragQuery}" (${ragQuery.length} chars)`);
         
         const ragRetriever = new ChatbotRAGRetriever();
-        console.log(`[generatePodcast] Initialized ChatbotRAGRetriever`);
-        console.log(`[generatePodcast] Calling retrieveRelevantDocuments with topK=5...`);
+        console.log(`${logPrefix} Initialized ChatbotRAGRetriever`);
+        console.log(`${logPrefix} Calling retrieveRelevantDocuments with topK=5...`);
+        const ragStart = Date.now();
         
-        retrievedDocs = await ragRetriever.retrieveRelevantDocuments(ragQuery, keys, 5); // Get top 5 documents
+        retrievedDocs = await ragRetriever.retrieveRelevantDocuments(
+          ragQuery,
+          keys,
+          5,
+          null,
+          {
+            queryType: 'podcast'
+          }
+        ); // Get top 5 documents
         
-        console.log(`[generatePodcast] retrieveRelevantDocuments returned ${retrievedDocs ? retrievedDocs.length : 0} documents`);
+        console.log(`${logPrefix} retrieveRelevantDocuments returned ${retrievedDocs ? retrievedDocs.length : 0} documents in ${Date.now() - ragStart} ms`);
         
         if (retrievedDocs && retrievedDocs.length > 0) {
-          console.log(`[generatePodcast] Processing ${retrievedDocs.length} retrieved documents...`);
+          console.log(`${logPrefix} Processing ${retrievedDocs.length} retrieved documents...`);
           
           // Log each document found
           retrievedDocs.forEach((doc, idx) => {
-            console.log(`[generatePodcast] Document ${idx + 1}: "${doc.title}" (similarity: ${doc.similarity?.toFixed(4) || 'N/A'}, category: ${doc.category || 'N/A'})`);
-            console.log(`[generatePodcast]   Content preview: ${doc.content?.substring(0, 100) || 'No content'}...`);
+            console.log(`${logPrefix} Document ${idx + 1}: "${doc.title}" (similarity: ${doc.similarity?.toFixed(4) || 'N/A'}, category: ${doc.category || 'N/A'})`);
+            console.log(`${logPrefix}   Content preview: ${doc.content?.substring(0, 100) || 'No content'}...`);
           });
           
-          knowledgeContext = ragRetriever.buildContextString(retrievedDocs, 3000); // Max 3000 chars
+          knowledgeContext = ragRetriever.buildContextString(retrievedDocs, { maxTokens: 1200 }); // Keep within token budget
           ragUsed = true;
           
           ragMetadata.documentsFound = retrievedDocs.length;
@@ -91,23 +116,20 @@ function createGeneratePodcastHandler(geminiApiKey, openRouterApiKey) {
           }));
           ragMetadata.contextLength = knowledgeContext.length;
           
-          console.log(`[generatePodcast] Built context string: ${knowledgeContext.length} characters`);
-          console.log(`[generatePodcast] Context preview (first 200 chars): ${knowledgeContext.substring(0, 200)}...`);
-          console.log(`[generatePodcast] Top match: "${retrievedDocs[0].title}" (similarity: ${retrievedDocs[0].similarity?.toFixed(4) || 'N/A'})`);
+          console.log(`${logPrefix} Built context string: ${knowledgeContext.length} characters`);
+          console.log(`${logPrefix} Context preview (first 200 chars): ${knowledgeContext.substring(0, 200)}...`);
+          console.log(`${logPrefix} Top match: "${retrievedDocs[0].title}" (similarity: ${retrievedDocs[0].similarity?.toFixed(4) || 'N/A'})`);
         } else {
-          console.log('[generatePodcast] ⚠️  No relevant documents found in knowledge base');
-          console.log('[generatePodcast] Possible reasons:');
-          console.log('[generatePodcast]   1. Knowledge base collection is empty');
-          console.log('[generatePodcast]   2. Documents exist but have no embeddings');
-          console.log('[generatePodcast]   3. Query similarity is too low');
-          console.log('[generatePodcast] Using static context only');
+          console.log(`${logPrefix} ⚠️  No relevant documents found in knowledge base`);
+          console.log(`${logPrefix} Possible reasons: 1) KB empty 2) No embeddings 3) Query similarity low`);
+          console.log(`${logPrefix} Using static context only`);
           ragMetadata.documentsFound = 0;
         }
         
-        console.log(`[generatePodcast] ===== RAG RETRIEVAL END =====`);
+        console.log(`${logPrefix} ===== RAG RETRIEVAL END =====`);
       } catch (ragError) {
-        console.error(`[generatePodcast] ❌ RAG retrieval failed: ${ragError.message}`);
-        console.error(`[generatePodcast] RAG error stack:`, ragError.stack);
+        console.error(`${logPrefix} ❌ RAG retrieval failed: ${ragError.message}`);
+        console.error(`${logPrefix} RAG error stack:`, ragError.stack);
         ragMetadata.error = ragError.message;
         // Continue without RAG - use static context as fallback
       }
@@ -124,75 +146,67 @@ PETRONAS Upstream is undergoing a transformation through "Systemic Shifts" - str
 `;
 
       // Build prompt with RAG context prioritized
-      let promptContext = '';
-      
-      if (knowledgeContext) {
-        promptContext = `\n--- KNOWLEDGE BASE INFORMATION (Use this as your primary source of facts) ---\n${knowledgeContext}\n--- END KNOWLEDGE BASE INFORMATION ---\n\n`;
-        console.log(`[generatePodcast] ✓ RAG context included in prompt (${knowledgeContext.length} chars)`);
-      } else {
-        console.log(`[generatePodcast] ⚠️  No RAG context - using static context only`);
-      }
-      
-      if (context) {
-        promptContext += `Additional context provided by user: ${context}\n\n`;
-      }
-      
-      // Add static context as fallback/reference
-      promptContext += `General Context about PETRONAS Upstream and Systemic Shifts:\n${systemicShiftsContext}\n`;
+      const knowledgeSection = knowledgeContext
+        ? `### Knowledge Base (Primary Facts)\n${knowledgeContext}`
+        : '### Knowledge Base (Primary Facts)\nNo relevant knowledge base passages were retrieved. Lean on the systemic context below.';
 
-      const podcastPrompt = `You are creating an educational podcast script for PETRONAS Upstream employees about: "${topic}"
+      const userContextSection = sanitizedContext
+        ? `### Additional Context From Requestor\n${sanitizedContext}`
+        : '';
 
-${promptContext}
-
-Create a professional, engaging podcast script with the following structure:
-
-1. **OUTLINE**: A brief outline of the podcast covering 3-5 main sections/topics
-2. **SCRIPT**: A full conversational script between a host and guest expert, written in a natural, engaging podcast style. Include:
-   - Introduction (host introduces topic and guest)
-   - Main discussion sections (3-5 sections)
-   - Q&A segments within each section (2-3 questions per section)
-   - Conclusion (key takeaways and closing)
-3. **SECTIONS**: Break down the script into structured sections with:
-   - Title for each section
-   - Content/transcript for that section
-   - Q&A pairs (question and answer)
-
-Format your response as JSON with this exact structure:
-{
-  "outline": "Brief outline text here",
-  "script": "Full conversational script here with HOST: and GUEST: dialogue markers",
+      const examplePodcastJson = `{
+  "outline": "Intro → Theme → Case Study → Conclusion",
+  "script": "HOST: Welcome back...\\nGUEST: Thanks for having me...",
   "sections": [
     {
-      "title": "Section 1 Title",
-      "content": "Section content/transcript",
+      "title": "Setting the Stage",
+      "content": "HOST and GUEST discuss the shift objectives...",
       "qa": [
         {
-          "question": "Question text",
-          "answer": "Answer text"
+          "question": "HOST: Why does this shift matter now?",
+          "answer": "GUEST: It unlocks advantaged barrels by..."
         }
       ]
     }
   ]
-}
+}`;
 
-Make the podcast informative, engaging, and relevant to PETRONAS Upstream operations and Systemic Shifts. Use natural conversation flow, avoid overly technical jargon, and include practical examples where relevant.
+      const promptSections = [
+        `### Role
+You are creating an educational podcast script for PETRONAS Upstream employees about "${sanitizedTopic}". Maintain an engaging, professional tone suitable for internal communications.`,
+        knowledgeSection,
+        `### Systemic Shifts Overview
+${systemicShiftsContext}`,
+        userContextSection,
+        securityNotice ? `### Security Notice\n${securityNotice}` : '',
+        `### Output Requirements
+1. Provide an "outline" summarizing the episode.
+2. Provide a conversational "script" with HOST:/GUEST: markers.
+3. Provide "sections" (3-5) each with title, content, and 2-3 Q&A pairs.
+4. Keep runtime near 12-15 minutes; highlight practical examples and PETRONAS references.`,
+        `### Example JSON Structure
+${examplePodcastJson}`,
+        `### Response Format
+Return strict JSON following the structure shown above.`
+      ].filter(Boolean);
 
-${knowledgeContext ? 'IMPORTANT: Prioritize information from the Knowledge Base section above. Use specific facts, data, and details from the knowledge base documents. If you reference information from the knowledge base, do so naturally in the conversation without explicitly mentioning "according to the knowledge base."' : ''}`;
+      const podcastPrompt = promptSections.join('\n\n');
 
       // Log prompt details for debugging
-      console.log(`[generatePodcast] ===== PROMPT DETAILS =====`);
-      console.log(`[generatePodcast] Prompt length: ${podcastPrompt.length} characters`);
-      console.log(`[generatePodcast] RAG context included: ${knowledgeContext ? 'YES' : 'NO'}`);
+      console.log(`${logPrefix} ===== PROMPT DETAILS =====`);
+      console.log(`${logPrefix} Prompt length: ${podcastPrompt.length} characters`);
+      console.log(`${logPrefix} RAG context included: ${knowledgeContext ? 'YES' : 'NO'}`);
       if (knowledgeContext) {
-        console.log(`[generatePodcast] RAG context length: ${knowledgeContext.length} characters`);
+        console.log(`${logPrefix} RAG context length: ${knowledgeContext.length} characters`);
       }
-      console.log(`[generatePodcast] Prompt preview (first 500 chars): ${podcastPrompt.substring(0, 500)}...`);
-      console.log(`[generatePodcast] ===== END PROMPT DETAILS =====`);
+      console.log(`${logPrefix} Prompt preview (first 500 chars): ${podcastPrompt.substring(0, 500)}...`);
+      console.log(`${logPrefix} ===== END PROMPT DETAILS =====`);
 
       // Generate podcast content
-      console.log(`[generatePodcast] Calling generateWithFallback to generate podcast...`);
+      console.log(`${logPrefix} Calling generateWithFallback to generate podcast...`);
+      const llmStart = Date.now();
       const podcastJson = await generateWithFallback(podcastPrompt, keys, true);
-      console.log(`[generatePodcast] Received response from LLM (${podcastJson.length} characters)`);
+      console.log(`${logPrefix} Received response from LLM (${podcastJson.length} characters) in ${Date.now() - llmStart} ms`);
 
       // Parse the JSON response
       let podcastData;
@@ -202,7 +216,7 @@ ${knowledgeContext ? 'IMPORTANT: Prioritize information from the Knowledge Base 
         cleanedJson = cleanedJson.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         podcastData = JSON.parse(cleanedJson);
       } catch (parseError) {
-        console.error('[generatePodcast] JSON parse error:', parseError);
+        console.error(`${logPrefix} JSON parse error:`, parseError);
         // If JSON parsing fails, create a structured response from the text
         podcastData = {
           outline: "Podcast outline generated",
@@ -228,19 +242,19 @@ ${knowledgeContext ? 'IMPORTANT: Prioritize information from the Knowledge Base 
         }];
       }
 
-      console.log(`[generatePodcast] Successfully generated podcast with ${podcastData.sections.length} sections`);
+      console.log(`${logPrefix} Successfully generated podcast with ${podcastData.sections.length} sections`);
 
       // Generate audio from the script
       let audioUrl = null;
       if (podcastData.script) {
         try {
-          console.log('[generatePodcast] Starting audio generation...');
-          console.log(`[generatePodcast] Script length: ${podcastData.script.length} characters`);
+          console.log(`${logPrefix} Starting audio generation...`);
+          console.log(`${logPrefix} Script length: ${podcastData.script.length} characters`);
           audioUrl = await generatePodcastAudio(podcastData.script, topic.trim());
-          console.log(`[generatePodcast] Audio generated successfully: ${audioUrl}`);
+          console.log(`${logPrefix} Audio generated successfully: ${audioUrl}`);
         } catch (audioError) {
-          console.error('[generatePodcast] Audio generation failed:', audioError);
-          console.error('[generatePodcast] Audio error stack:', audioError.stack);
+          console.error(`${logPrefix} Audio generation failed:`, audioError);
+          console.error(`${logPrefix} Audio error stack:`, audioError.stack);
           // Continue without audio - script generation was successful
           // Audio generation failure should not fail the entire request
           // But log the error for debugging
@@ -253,7 +267,7 @@ ${knowledgeContext ? 'IMPORTANT: Prioritize information from the Knowledge Base 
       const response = {
         success: true,
         podcast: podcastData,
-        topic: topic.trim(),
+        topic: sanitizedTopic,
         audioUrl: audioUrl,
         ragMetadata: {
           used: ragUsed,
@@ -265,19 +279,19 @@ ${knowledgeContext ? 'IMPORTANT: Prioritize information from the Knowledge Base 
         }
       };
 
-      console.log(`[generatePodcast] ===== RESPONSE SUMMARY =====`);
-      console.log(`[generatePodcast] RAG used: ${ragUsed}`);
-      console.log(`[generatePodcast] Documents found: ${ragMetadata.documentsFound}`);
-      console.log(`[generatePodcast] Context length: ${ragMetadata.contextLength} chars`);
+      console.log(`${logPrefix} ===== RESPONSE SUMMARY =====`);
+      console.log(`${logPrefix} RAG used: ${ragUsed}`);
+      console.log(`${logPrefix} Documents found: ${ragMetadata.documentsFound}`);
+      console.log(`${logPrefix} Context length: ${ragMetadata.contextLength} chars`);
       if (ragMetadata.topDocuments.length > 0) {
-        console.log(`[generatePodcast] Top documents: ${ragMetadata.topDocuments.map(d => d.title).join(', ')}`);
+        console.log(`${logPrefix} Top documents: ${ragMetadata.topDocuments.map(d => d.title).join(', ')}`);
       }
-      console.log(`[generatePodcast] ===== END RESPONSE SUMMARY =====`);
+      console.log(`${logPrefix} ===== END RESPONSE SUMMARY =====`);
 
       res.status(200).send(response);
 
       } catch (error) {
-        console.error("[generatePodcast] Error:", error);
+        console.error(`${logPrefix} Error:`, error);
         res.status(500).send({
           error: "Failed to generate podcast",
           message: error.message

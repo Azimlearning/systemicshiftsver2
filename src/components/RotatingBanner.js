@@ -1,10 +1,11 @@
 // src/components/RotatingBanner.js
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import Image from 'next/image';
+// Using regular img tag to avoid Next.js Image validation issues with local images
 
 /**
  * Rotating Banner Component
@@ -20,7 +21,7 @@ export default function RotatingBanner() {
       id: 1,
       title: 'New Strategic Initiatives Launched',
       description: 'Discover the latest updates on our upstream transformation journey and key milestones achieved this quarter.',
-      image: '/images/highlight-placeholder.jpg',
+      image: '/StockImage/Thumbnail-1.jpg',
       category: 'News',
       link: '/articles'
     },
@@ -28,7 +29,7 @@ export default function RotatingBanner() {
       id: 2,
       title: 'Special Promotion: Submit Your Story',
       description: 'Share your upstream success stories and get featured on our platform. Limited time opportunity!',
-      image: '/images/highlight-placeholder.jpg',
+      image: '/StockImage/Thumbnail-2.jpg',
       category: 'Promotion',
       link: '/submit-story'
     },
@@ -36,7 +37,7 @@ export default function RotatingBanner() {
       id: 3,
       title: 'Featured Article: Innovation in Action',
       description: 'Read about how our teams are leveraging cutting-edge technology for real-time optimization across operations.',
-      image: '/images/highlight-placeholder.jpg',
+      image: '/StockImage/Thumbnail-3.jpg',
       category: 'Article',
       link: '/articles'
     }
@@ -91,11 +92,14 @@ export default function RotatingBanner() {
                 className="absolute inset-0"
               >
                 <div className="relative w-full h-full">
-                  <Image
+                  <img
                     src={bannerItems[currentIndex].image}
                     alt={bannerItems[currentIndex].title}
-                    fill
-                    className="object-cover"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to a gradient background if image fails to load
+                      e.target.style.display = 'none';
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-r from-teal-900/80 to-teal-800/60"></div>
                   <div className="absolute inset-0 flex items-center">
