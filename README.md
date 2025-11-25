@@ -166,8 +166,9 @@ See `SETUP.md` for detailed setup instructions including:
 
 - `SETUP.md` - Detailed setup and configuration guide
 - `TESTING.md` - Testing procedures and checklist
-- `SITE_DOCUMENTATION.md` - Full site architecture and API documentation
+- `SITE_BREAKSOWN.md` - Full site architecture and API documentation
 - `Scripts_usage/README.md` - Utility scripts documentation
+- `FULL_DOCUMENTATION.md` - Full detailed site documentation
 
 ## Contributing
 
