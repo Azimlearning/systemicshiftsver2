@@ -46,3 +46,6 @@ python/SETUP_AUTH.md
 test-hf-api-direct.ps1
 *.json.key
 *firebase-key*
+functions/.txt
+*.secret.local
+**/*-key.txt
