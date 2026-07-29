@@ -2,7 +2,7 @@
 
 A comprehensive Next.js-based microsite for PETRONAS Upstream's Systemic Shifts initiative, featuring AI-powered tools, analytics, and content management. Built during an internship project.
 
-**Live demo:** _add Vercel URL here after deployment_
+**Live demo:** [petronas-systemic-shifts-microsite.vercel.app](https://petronas-systemic-shifts-microsite.vercel.app)
 
 > **Note on AI features:** The AI-powered tools (NexusGPT, podcast generation, image generation, meeting insights) call Firebase Cloud Functions that require an active billing plan to run. In this public showcase, those functions may be offline; the UI is designed to fail gracefully with a clear message rather than a broken screen. See [docs/SITE_BREAKDOWN.md](docs/SITE_BREAKDOWN.md) for the full architecture.
 
