@@ -11,6 +11,7 @@ import ChatHistorySidebar from '../../components/chat/ChatHistorySidebar'; // Im
 import KnowledgeBaseInjector from '../../components/KnowledgeBaseInjector';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { AI_FEATURES_AVAILABLE, AI_UNAVAILABLE_MESSAGE } from '../../lib/aiFeatures';
 
 export default function NexusGPTPage() {
   // --- IMPORTANT: Get your deployed function URL ---
@@ -107,6 +108,15 @@ export default function NexusGPTPage() {
     
     // Save user message to session
     await saveMessageToSession(newUserMessage, sessionId, updatedHistory);
+
+    if (!AI_FEATURES_AVAILABLE) {
+      const errorMessage = { role: 'error', content: AI_UNAVAILABLE_MESSAGE, timestamp: new Date() };
+      const errorHistory = [...updatedHistory, errorMessage];
+      setChatHistory(errorHistory);
+      await saveMessageToSession(errorMessage, sessionId, errorHistory);
+      setIsChatLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(chatFunctionUrl, {

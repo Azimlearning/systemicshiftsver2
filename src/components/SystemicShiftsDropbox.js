@@ -1,21 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { db } from '../lib/firebase'; 
+import { db } from '../lib/firebase';
 import { collection, getDocs, query, orderBy, limit, startAfter, deleteDoc, doc, getCountFromServer, onSnapshot } from 'firebase/firestore';
 import Link from 'next/link';
+import { AI_FEATURES_AVAILABLE, AI_UNAVAILABLE_MESSAGE } from '../lib/aiFeatures';
 
 export default function SystemicShiftsDropbox() {
-  // Initialize login state - always start with false to avoid hydration mismatch
-  // Will be updated in useEffect (client-side only)
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isNavigating, setIsNavigating] = useState(false);
-  const router = useRouter();
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(null); // Track which submission's menu is open
 
   // Pagination State
@@ -37,6 +32,8 @@ export default function SystemicShiftsDropbox() {
 
   // Helper to check if AI generation is still in progress
   const isGenerating = (sub) => {
+    // The AI backend is offline in this demo, so never show a perpetual spinner.
+    if (!AI_FEATURES_AVAILABLE) return false;
     // Show spinner if:
     // 1. Has submittedAt but no analysisTimestamp (AI analysis not started)
     // 2. Has analysisTimestamp but image is still pending (image generation in progress)
@@ -196,25 +193,9 @@ export default function SystemicShiftsDropbox() {
   };
 
   useEffect(() => {
-    // Check login status on client side only (avoids hydration mismatch)
-    if (typeof window === 'undefined' || isNavigating) return;
-    
-    const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-    
-    // Update login state - necessary for client-side sessionStorage check
-    // This is a valid use case: checking client-side storage and updating state accordingly
-    setIsLoggedIn(loggedIn);
-    
-    if (!loggedIn) {
-      setIsNavigating(true);
-      router.push('/login?redirect=/nexushub/dropbox');
-      return;
-    }
-    
-    // Fetch initial submissions
     fetchSubmissions('first');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, isNavigating]);
+  }, []);
 
   // Close download menu when clicking outside
   useEffect(() => {
@@ -454,14 +435,6 @@ export default function SystemicShiftsDropbox() {
     }
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-[500px] flex items-center justify-center bg-gray-100">
-        <p className="text-gray-600 text-xl">Redirecting to login...</p>
-      </div>
-    );
-  }
-
    if (loading && submissions.length === 0) {
     return (
       <div className="min-h-[500px] flex items-center justify-center">
@@ -593,7 +566,7 @@ export default function SystemicShiftsDropbox() {
                             {sub.aiGeneratedWriteup && !sub.aiGeneratedWriteup.includes('failed') ? (
                               sub.aiGeneratedWriteup
                             ) : (
-                              <span className="text-red-600 italic">{sub.aiGeneratedWriteup || 'Not generated yet.'}</span>
+                              <span className="text-red-600 italic">{sub.aiGeneratedWriteup || (!AI_FEATURES_AVAILABLE ? AI_UNAVAILABLE_MESSAGE : 'Not generated yet.')}</span>
                             )}
                           </div>
                         </div>
@@ -618,7 +591,7 @@ export default function SystemicShiftsDropbox() {
                             </div>
                           ) : (
                             <p className={`p-3 text-xs rounded whitespace-pre-wrap ${sub.aiGeneratedImageUrl && sub.aiGeneratedImageUrl.includes('failed') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                              {sub.aiGeneratedImageUrl || 'Image generation pending.'}
+                              {sub.aiGeneratedImageUrl || (!AI_FEATURES_AVAILABLE ? AI_UNAVAILABLE_MESSAGE : 'Image generation pending.')}
                             </p>
                           )}
                         </div>

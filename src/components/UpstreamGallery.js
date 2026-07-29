@@ -1,23 +1,20 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { db, storage } from '../lib/firebase';
 import { collection, getDocs, query, where, orderBy, limit, startAfter, getCountFromServer, addDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { AI_FEATURES_AVAILABLE, AI_UNAVAILABLE_MESSAGE } from '../lib/aiFeatures';
 
 const CATEGORIES = ['All', 'Stock Images', 'Events', 'Team Photos', 'Infographics', 'Operations', 'Facilities'];
 const IMAGES_PER_PAGE = 12;
 
 export default function UpstreamGallery() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [isNavigating, setIsNavigating] = useState(false);
-  const router = useRouter();
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -191,28 +188,9 @@ export default function UpstreamGallery() {
 
   // Handle category change
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchImages('first');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory]);
-
-  // Initial load and login check
-  useEffect(() => {
-    if (typeof window === 'undefined' || isNavigating) return;
-
-    const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(loggedIn);
-
-    if (!loggedIn) {
-      setIsNavigating(true);
-      router.push('/login?redirect=/nexushub/upg');
-      return;
-    }
-
     fetchImages('first');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, isNavigating]);
+  }, [selectedCategory]);
 
   // Handle file input change
   const handleFileChange = (e) => {
@@ -240,6 +218,11 @@ export default function UpstreamGallery() {
   const handleAIAnalysis = async () => {
     if (!uploadFormData.file) {
       alert('Please select an image file first');
+      return;
+    }
+
+    if (!AI_FEATURES_AVAILABLE) {
+      setError(AI_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -585,14 +568,6 @@ export default function UpstreamGallery() {
     }
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-[500px] flex items-center justify-center bg-gray-100">
-        <p className="text-gray-600 text-xl">Redirecting to login...</p>
-      </div>
-    );
-  }
-
   if (loading && images.length === 0) {
     return (
       <div className="min-h-[500px] flex items-center justify-center">
@@ -607,20 +582,18 @@ export default function UpstreamGallery() {
     <section className="bg-white p-6 rounded-lg shadow-lg">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-semibold text-gray-800 border-b pb-2">Upstream Gallery</h2>
-        {isLoggedIn && (
-          <button
-            onClick={() => setShowUploadForm(!showUploadForm)}
-            className="bg-teal-600 text-white font-semibold py-2 px-4 rounded transition-colors hover:bg-teal-700"
-          >
-            {showUploadForm ? 'Cancel Upload' : '+ Upload Image'}
-          </button>
-        )}
+        <button
+          onClick={() => setShowUploadForm(!showUploadForm)}
+          className="bg-teal-600 text-white font-semibold py-2 px-4 rounded transition-colors hover:bg-teal-700"
+        >
+          {showUploadForm ? 'Cancel Upload' : '+ Upload Image'}
+        </button>
       </div>
 
       {error && <p className="text-red-600 mb-4">{error}</p>}
 
       {/* Upload Form */}
-      {showUploadForm && isLoggedIn && (
+      {showUploadForm && (
         <div className="mb-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Upload New Image</h3>
           <form onSubmit={handleUpload} className="space-y-4">
@@ -775,14 +748,12 @@ export default function UpstreamGallery() {
       {images.length === 0 && !loading ? (
         <div className="text-center py-12">
           <p className="text-gray-600 text-lg">No images found in this category.</p>
-          {isLoggedIn && (
-            <button
-              onClick={() => setShowUploadForm(true)}
-              className="mt-4 bg-teal-600 text-white font-semibold py-2 px-4 rounded transition-colors hover:bg-teal-700"
-            >
-              Upload First Image
-            </button>
-          )}
+          <button
+            onClick={() => setShowUploadForm(true)}
+            className="mt-4 bg-teal-600 text-white font-semibold py-2 px-4 rounded transition-colors hover:bg-teal-700"
+          >
+            Upload First Image
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">

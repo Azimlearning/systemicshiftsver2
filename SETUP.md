@@ -2,6 +2,10 @@
 
 Complete setup instructions for the Systemic Shifts Microsite project.
 
+> **AI features are disabled by default.** This build ships with `AI_FEATURES_AVAILABLE = false` in `src/lib/aiFeatures.js`, so NexusGPT, podcast/image generation, meeting insights, and knowledge base tools show a friendly "not available" message instead of calling Firebase Cloud Functions. This means **sections 3–5 below (Firebase Functions, Cloud Function secrets, AI API keys) are entirely optional** — skip straight to [Local Development](#local-development) if you just want to run the site. There is also no login/auth gate; every page is public.
+>
+> To re-enable AI features: flip the flag in `src/lib/aiFeatures.js`, then follow sections 3–5 to deploy the Cloud Functions (requires a Blaze/pay-as-you-go Firebase plan) and set their API secrets.
+
 ## Prerequisites
 
 ### Required Software
@@ -29,8 +33,8 @@ Download and install from [python.org](https://www.python.org/downloads/)
 
 ### 1. Clone Repository
 ```bash
-git clone <repository-url>
-cd systemicshiftsver2
+git clone https://github.com/Azimlearning/PETRONAS-Upstream-Systemic-Shifts-Microsite-AI.git
+cd PETRONAS-Upstream-Systemic-Shifts-Microsite-AI
 ```
 
 ### 2. Install Dependencies
@@ -54,7 +58,7 @@ pip install -r requirements.txt
 cd ..
 ```
 
-### 3. Firebase Configuration
+### 3. Firebase Configuration (optional — only needed to re-enable AI features)
 
 #### Initialize Firebase Project
 ```bash
@@ -76,7 +80,12 @@ firebase use <project-id>
 ### 4. Environment Variables
 
 #### Frontend (.env.local)
-Create `systemicshiftsver2/.env.local`:
+```bash
+cp .env.example .env.local
+```
+
+This is the only setup step required to run the site as-is (AI features disabled). Fill in the 7 Firebase Web SDK values — Firebase Console → Project Settings → General → Your apps → Web app:
+
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key_here
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
@@ -85,10 +94,11 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
-NEXT_PUBLIC_TRIGGER_IMAGE_GENERATION_URL=https://us-central1-your-project.cloudfunctions.net/triggerImageGeneration
 ```
 
-#### Firebase Functions Secrets
+These are safe to expose client-side (protected by Firestore/Storage security rules), and are all this project needs for the frontend + Firestore/Storage to work.
+
+#### Firebase Functions Secrets (optional — only needed to re-enable AI features)
 Set up secrets for Cloud Functions:
 ```bash
 # Gemini API Key
@@ -101,7 +111,7 @@ firebase functions:secrets:set OPENROUTER_API_KEY
 firebase functions:secrets:set HF_API_TOKEN
 ```
 
-### 5. API Keys Setup
+### 5. API Keys Setup (optional — only needed to re-enable AI features)
 
 #### Google Gemini API
 1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
@@ -169,7 +179,7 @@ pip install functions-framework
 functions-framework --target=generateImageHfPython --port=8080
 ```
 
-## Local Image Generator Setup
+## Local Image Generator Setup (optional — only needed to re-enable AI features)
 
 The project uses a **local image generator** service that runs on your machine to generate images using your GPU, then uploads them to Firebase Storage. This is preferred over Cloud Functions for better performance and cost efficiency.
 
@@ -204,7 +214,7 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 3. Save the JSON file as `firebase-key.json` in the `python` folder
 4. Set environment variable:
 ```powershell
-$env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\User\Documents\Coding\SIP\Systemic Shifts Microsite\systemicshiftsver2\python\firebase-key.json"
+$env:GOOGLE_APPLICATION_CREDENTIALS="<absolute-path-to-repo>\python\firebase-key.json"
 ```
 
 **Option B: Application Default Credentials**

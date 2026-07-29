@@ -3,6 +3,7 @@
 // This code is the logic from your old Faq.js, now reusable
 import { useState, useEffect, useRef } from 'react';
 import { FaUserCircle, FaRobot, FaTimes, FaSync } from 'react-icons/fa';
+import { AI_FEATURES_AVAILABLE, AI_UNAVAILABLE_MESSAGE } from '../lib/aiFeatures';
 
 export default function ChatInterface({ chatFunctionUrl }) {
   const [chatInput, setChatInput] = useState('');
@@ -38,6 +39,12 @@ export default function ChatInterface({ chatFunctionUrl }) {
     setIsChatLoading(true);
     const newUserMessage = { role: 'user', content: userMessage, timestamp: new Date() };
     setChatHistory(prev => [...prev, newUserMessage]);
+
+    if (!AI_FEATURES_AVAILABLE) {
+      setChatHistory(prev => [...prev, { role: 'error', content: AI_UNAVAILABLE_MESSAGE, timestamp: new Date() }]);
+      setIsChatLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(chatFunctionUrl, {

@@ -742,9 +742,8 @@ App
 ## Security Considerations
 
 ### Authentication
-- Firebase Authentication
-- Protected routes
-- Role-based access control
+- None. Every route is publicly accessible; there is no login/auth gate in this build.
+- AI-calling features (NexusGPT, podcast/image generation, meeting insights, knowledge base tools) are disabled by default via `AI_FEATURES_AVAILABLE` in `src/lib/aiFeatures.js` to avoid unattended cloud costs. See the README for how to re-enable them.
 
 ### Data Security
 - Firestore security rules

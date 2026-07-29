@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FaPodcast, FaDownload, FaSpinner, FaPlay, FaPause, FaSave, FaCheck } from 'react-icons/fa';
 import { db } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { AI_FEATURES_AVAILABLE, AI_UNAVAILABLE_MESSAGE } from '../lib/aiFeatures';
 
 export default function PodcastGenerator() {
   const [topic, setTopic] = useState('');
@@ -34,6 +35,11 @@ export default function PodcastGenerator() {
   const handleGenerate = async () => {
     if (!topic.trim()) {
       setError('Please enter a podcast topic.');
+      return;
+    }
+
+    if (!AI_FEATURES_AVAILABLE) {
+      setError(AI_UNAVAILABLE_MESSAGE);
       return;
     }
 
@@ -160,10 +166,7 @@ export default function PodcastGenerator() {
     setError('');
 
     try {
-      // Get user identifier from sessionStorage or use anonymous
-      const userId = typeof window !== 'undefined' 
-        ? (sessionStorage.getItem('isLoggedIn') === 'true' ? 'authenticated' : 'anonymous')
-        : 'anonymous';
+      const userId = 'anonymous';
 
       const podcastData = {
         topic: topic.trim(),

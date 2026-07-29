@@ -7,6 +7,7 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/fi
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import FileUploader from './FileUploader';
 import { FaSave, FaTimes, FaFileUpload } from 'react-icons/fa';
+import { AI_FEATURES_AVAILABLE } from '../../lib/aiFeatures';
 
 export default function MeetingEditor({ meeting, onSave, onCancel }) {
   const [title, setTitle] = useState(meeting?.title || '');
@@ -57,30 +58,32 @@ export default function MeetingEditor({ meeting, onSave, onCancel }) {
 
       // Process file to extract text
       setUploadProgress(90);
-      try {
-        const functionUrl = process.env.NEXT_PUBLIC_PROCESS_MEETING_FILE_URL || 'https://us-central1-systemicshiftv2.cloudfunctions.net/processMeetingFile';
-        const processResponse = await fetch(functionUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileUrl: downloadURL,
-            fileName: file.name,
-            fileType: fileExt
-          })
-        });
+      if (AI_FEATURES_AVAILABLE) {
+        try {
+          const functionUrl = process.env.NEXT_PUBLIC_PROCESS_MEETING_FILE_URL || 'https://us-central1-systemicshiftv2.cloudfunctions.net/processMeetingFile';
+          const processResponse = await fetch(functionUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fileUrl: downloadURL,
+              fileName: file.name,
+              fileType: fileExt
+            })
+          });
 
-        if (processResponse.ok) {
-          const processData = await processResponse.json();
-          if (processData.extractedText) {
-            setContent(processData.extractedText);
+          if (processResponse.ok) {
+            const processData = await processResponse.json();
+            if (processData.extractedText) {
+              setContent(processData.extractedText);
+            }
+          } else {
+            console.warn('File processing function not available, using file as-is');
+            // Continue without extracted text - user can manually enter
           }
-        } else {
-          console.warn('File processing function not available, using file as-is');
+        } catch (error) {
+          console.warn('File processing failed:', error);
           // Continue without extracted text - user can manually enter
         }
-      } catch (error) {
-        console.warn('File processing failed:', error);
-        // Continue without extracted text - user can manually enter
       }
 
       setUploadProgress(100);
@@ -133,7 +136,7 @@ export default function MeetingEditor({ meeting, onSave, onCancel }) {
       }
 
       // Trigger AI processing (async, don't wait)
-      if (meetingId && (!meeting || content !== meeting.content)) {
+      if (AI_FEATURES_AVAILABLE && meetingId && (!meeting || content !== meeting.content)) {
         const functionUrl = process.env.NEXT_PUBLIC_GENERATE_MEETING_INSIGHTS_URL || 'https://us-central1-systemicshiftv2.cloudfunctions.net/generateMeetingInsights';
         fetch(functionUrl, {
           method: 'POST',

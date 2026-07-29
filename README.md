@@ -4,7 +4,7 @@ A comprehensive Next.js-based microsite for PETRONAS Upstream's Systemic Shifts 
 
 **Live demo:** [petronas-systemic-shifts-microsite.vercel.app](https://petronas-systemic-shifts-microsite.vercel.app)
 
-> **Note on AI features:** The AI-powered tools (NexusGPT, podcast generation, image generation, meeting insights) call Firebase Cloud Functions that require an active billing plan to run. In this public showcase, those functions may be offline; the UI is designed to fail gracefully with a clear message rather than a broken screen. See [docs/SITE_BREAKDOWN.md](docs/SITE_BREAKDOWN.md) for the full architecture.
+> **Note on AI features:** The AI-powered tools (NexusGPT, podcast generation, image generation, meeting insights, knowledge base tools) call Firebase Cloud Functions that require an active (paid) billing plan and configured API secrets to run. To avoid unexpected cloud costs in this public showcase, those calls are **disabled by default** via a single flag — `AI_FEATURES_AVAILABLE` in [`src/lib/aiFeatures.js`](src/lib/aiFeatures.js) — so the UI shows a clear "AI features aren't available in this demo" message instead of attempting a network call. Every route, including previously admin-only pages (MeetX, Systemic Shifts Dropbox, Upstream Gallery), is publicly accessible — there is no login/auth gate in this build. To re-enable AI features, set `AI_FEATURES_AVAILABLE = true`, deploy the Cloud Functions in `functions/` and `functions-python/` (requires Blaze billing), and configure their secrets — see [SETUP.md](SETUP.md). See [docs/SITE_BREAKDOWN.md](docs/SITE_BREAKDOWN.md) for the full architecture.
 
 ## Overview
 
@@ -26,8 +26,8 @@ The Systemic Shifts Microsite is a digital platform designed to support PETRONAS
 
 ### Backend
 - **Firebase**: Firestore (database), Storage, Cloud Functions
-- **Authentication**: Firebase Auth
 - **Hosting**: Firebase Hosting / Vercel
+- No authentication/login — all pages are publicly accessible
 
 ### AI Services
 - **LLM**: Google Gemini, OpenRouter
@@ -86,8 +86,7 @@ Image gallery with AI-powered categorization and search.
 
 ### Prerequisites
 - Node.js 18+ and npm
-- Firebase CLI
-- Python 3.9+ (for Python functions)
+- Firebase CLI and Python 3.9+ (only needed if you re-enable AI features and deploy the Cloud Functions — see the note above)
 
 ### Installation
 

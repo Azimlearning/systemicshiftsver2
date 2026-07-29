@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { db } from '../../lib/firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import MeetingList from '../../components/MeetX/MeetingList';
@@ -10,29 +9,15 @@ import MeetingEditor from '../../components/MeetX/MeetingEditor';
 import MeetingViewer from '../../components/MeetX/MeetingViewer';
 
 export default function MeetXPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [viewMode, setViewMode] = useState('list'); // 'list', 'create', 'edit', 'view'
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isNavigating, setIsNavigating] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
-    if (typeof window === 'undefined' || isNavigating) return;
-    
-    const loggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-    setIsLoggedIn(loggedIn);
-    
-    if (!loggedIn) {
-      setIsNavigating(true);
-      router.push('/login?redirect=/meetx');
-      return;
-    }
-
     fetchMeetings();
-  }, [router, isNavigating]);
+  }, []);
 
   const fetchMeetings = async (retryCount = 0) => {
     setLoading(true);
@@ -89,17 +74,6 @@ export default function MeetXPage() {
     setViewMode('list');
     setSelectedMeeting(null);
   };
-
-  if (!isLoggedIn) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-          <p className="mt-4 text-gray-600">Redirecting to login...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading && meetings.length === 0) {
     return (

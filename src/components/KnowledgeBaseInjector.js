@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { FaTimes, FaCheck, FaSpinner, FaFileUpload, FaFile } from 'react-icons/fa';
+import { AI_FEATURES_AVAILABLE, AI_UNAVAILABLE_MESSAGE } from '../lib/aiFeatures';
 
 const CATEGORIES = [
   'systemic-shifts',
@@ -60,6 +61,11 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
       return;
     }
 
+    if (!AI_FEATURES_AVAILABLE) {
+      setMessage({ type: 'error', text: AI_UNAVAILABLE_MESSAGE });
+      return;
+    }
+
     setIsExtracting(true);
     setMessage({ type: '', text: '' });
 
@@ -112,6 +118,11 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
     
     if (!formData.title.trim() || !formData.content.trim()) {
       setMessage({ type: 'error', text: 'Title and Content are required' });
+      return;
+    }
+
+    if (!AI_FEATURES_AVAILABLE) {
+      setMessage({ type: 'error', text: AI_UNAVAILABLE_MESSAGE });
       return;
     }
 
@@ -181,6 +192,11 @@ export default function KnowledgeBaseInjector({ isOpen, onClose }) {
   const handleUploadAndAddDirectly = async () => {
     if (!selectedFile) {
       setMessage({ type: 'error', text: 'Please select a file first' });
+      return;
+    }
+
+    if (!AI_FEATURES_AVAILABLE) {
+      setMessage({ type: 'error', text: AI_UNAVAILABLE_MESSAGE });
       return;
     }
 
