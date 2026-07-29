@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    loader: "custom",
-    loaderFile: "./loader.js",
-  },
   reactCompiler: true,
+  turbopack: {
+    root: import.meta.dirname,
+  },
   images: {
     remotePatterns: [
       {

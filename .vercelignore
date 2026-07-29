@@ -1,0 +1,16 @@
+# Firebase Cloud Functions are deployed separately via `firebase deploy`,
+# not part of the Vercel (Next.js) build.
+functions
+functions-python
+
+# Local-only GPU image generator service, not part of the web app.
+python
+
+# Docs and project data not needed in the deployed bundle.
+docs
+SETUP.md
+
+# Firebase project config, irrelevant to Vercel.
+.firebaserc
+firebase.json
+cors.json

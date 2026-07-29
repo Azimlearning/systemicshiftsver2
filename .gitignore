@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -49,3 +50,14 @@ test-hf-api-direct.ps1
 functions/.txt
 *.secret.local
 **/*-key.txt
+
+# python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# editor / IDE
+.idx/
+firebase-debug.log
+*.log

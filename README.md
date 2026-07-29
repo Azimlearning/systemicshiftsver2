@@ -1,6 +1,10 @@
 # Systemic Shifts Microsite
 
-A comprehensive Next.js-based microsite for PETRONAS Upstream's Systemic Shifts initiative, featuring AI-powered tools, analytics, and content management.
+A comprehensive Next.js-based microsite for PETRONAS Upstream's Systemic Shifts initiative, featuring AI-powered tools, analytics, and content management. Built during an internship project.
+
+**Live demo:** _add Vercel URL here after deployment_
+
+> **Note on AI features:** The AI-powered tools (NexusGPT, podcast generation, image generation, meeting insights) call Firebase Cloud Functions that require an active billing plan to run. In this public showcase, those functions may be offline; the UI is designed to fail gracefully with a clear message rather than a broken screen. See [docs/SITE_BREAKDOWN.md](docs/SITE_BREAKDOWN.md) for the full architecture.
 
 ## Overview
 
@@ -67,15 +71,15 @@ Image gallery with AI-powered categorization and search.
 ## Project Structure
 
 ```
-systemicshiftsver2/
 ├── src/
 │   ├── app/              # Next.js app router pages
 │   ├── components/       # React components
 │   └── lib/              # Utility functions and helpers
-├── functions/            # Firebase Cloud Functions (Node.js)
-├── functions-python/     # Firebase Cloud Functions (Python)
-├── public/               # Static assets
-└── Scripts_usage/        # Utility scripts
+├── functions/             # Firebase Cloud Functions (Node.js)
+├── functions-python/      # Firebase Cloud Functions (Python)
+├── python/                # Local GPU-accelerated image generator service
+├── public/                # Static assets
+└── docs/                  # Architecture and testing documentation
 ```
 
 ## Quick Start
@@ -89,8 +93,8 @@ systemicshiftsver2/
 
 1. Clone the repository
 ```bash
-git clone <repository-url>
-cd systemicshiftsver2
+git clone https://github.com/Azimlearning/PETRONAS-Upstream-Systemic-Shifts-Microsite-AI.git
+cd PETRONAS-Upstream-Systemic-Shifts-Microsite-AI
 ```
 
 2. Install dependencies
@@ -99,15 +103,12 @@ npm install
 ```
 
 3. Set up environment variables
-Create a `.env.local` file with:
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+```bash
+cp .env.example .env.local
 ```
+
+Then fill in the values in `.env.local`. See [SETUP.md](SETUP.md) for where to get each key.
 
 4. Run development server
 ```bash
@@ -141,22 +142,35 @@ Located in `functions-python/` directory:
 ## Deployment
 
 ### Frontend
-Deploy to Firebase Hosting or Vercel:
+
+Deployed via Vercel (connected to this repo's `main` branch). Manual deploy:
+
+```bash
+npm run build
+vercel --prod
+```
+
+Firebase Hosting is also an option if you prefer to keep frontend and backend on the same platform:
+
 ```bash
 npm run build
 firebase deploy --only hosting
 ```
 
 ### Cloud Functions
+
 ```bash
 cd functions
 npm install
 firebase deploy --only functions
 ```
 
+Requires an active Blaze (pay-as-you-go) billing plan on the Firebase project for Cloud Functions v2 and Secret Manager.
+
 ## Configuration
 
-See `SETUP.md` for detailed setup instructions including:
+See [SETUP.md](SETUP.md) for detailed setup instructions including:
+
 - Firebase configuration
 - API keys setup
 - Environment variables
@@ -164,11 +178,9 @@ See `SETUP.md` for detailed setup instructions including:
 
 ## Documentation
 
-- `SETUP.md` - Detailed setup and configuration guide
-- `TESTING.md` - Testing procedures and checklist
-- `SITE_BREAKSOWN.md` - Full site architecture and API documentation
-- `Scripts_usage/README.md` - Utility scripts documentation
-- `FULL_DOCUMENTATION.md` - Full detailed site documentation
+- [SETUP.md](SETUP.md) - Detailed setup and configuration guide
+- [docs/SITE_BREAKDOWN.md](docs/SITE_BREAKDOWN.md) - Full site architecture and API documentation
+- [docs/TESTING.md](docs/TESTING.md) - Testing procedures and checklist
 
 ## Contributing
 
